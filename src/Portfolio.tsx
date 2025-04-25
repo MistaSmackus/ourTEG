@@ -46,7 +46,7 @@ export default function Portfolio() {
    const historyRes = await client.models.Marketvalue.list();
    const sorted = historyRes.data
    ?.filter(entry => entry.time)
-   ?.sort((a, b) => new Date(a.time ?? "").getTime() - new Date(a.time || "").getTime()
+   ?.sort((a, b) => new Date(a.time ?? "").getTime() - new Date(b.time ?? "").getTime())
    ?.map((entry) => parseFloat(entry.value ?? "0"));
    setPortfolioHistory(sorted || []);
    
