@@ -1,8 +1,12 @@
 import Table from "react-bootstrap/Table";
 import Card from "react-bootstrap/Card";
 import Container from "react-bootstrap/Container";
-import { useAuthenticator} from "@aws-amplify/ui-react";
+import Button from "react-bootstrap/Button";
+import { useAuthenticator } from "@aws-amplify/ui-react";
 import { Line } from "react-chartjs-2";
+import { generateClient } from "aws-amplify/data";
+import type { Schema } from "../amplify/data/resource";
+import { useEffect, useState } from "react";
 import {
   Chart as ChartJS,
   LineElement,
@@ -14,38 +18,63 @@ import {
   Title
 } from "chart.js";
 
-// Register required Chart.js components
+
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend, Title);
 
+const client = generateClient<Schema>();
+
 export default function Portfolio() {
-  const {user} = useAuthenticator();
+  const { user } = useAuthenticator();
   const fallbackName = user?.signInDetails?.loginId?.split("@")[0];
   const displayName = fallbackName || "Guest";
-  const totalPortfolioValue = "$125,782.35";
-  const portfolioHistory = [120000, 121500, 123000, 124200, 125000, 126500, 125782];
 
-  // Generate mock dates for X-axis
-  const labels = Array.from({ length: 7 }, (_, i) => {
+  const [portfolioHistory, setPortfolioHistory] = useState<number[]>([]);
+  const [totalPortfolioValue, setTotalPortfolioValue] = useState("$0.00");
+  const [purchasedStocks, setPurchasedStocks] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const accountRes = await client.models.Account.list();
+        const account = accountRes.data?.[0];
+        setTotalPortfolioValue(`$${account?.accountvalue || "0"}`);
+
+        const historyRes = await client.models.Marketvalue.list();
+        const sorted = historyRes.data
+          ?.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
+          ?.map((entry) => parseFloat(entry.value));
+        setPortfolioHistory(sorted || []);
+
+        const ownedRes = await client.models.Ownedstock.list();
+        setPurchasedStocks(ownedRes.data || []);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  const handleTestWrite = async () => {
+    try {
+      const res = await client.models.Marketvalue.create({
+        value: (Math.random() * 100000).toFixed(2),
+        time: new Date().toISOString(),
+      });
+      console.log("Test write success:", res);
+      alert("Test write to DynamoDB succeeded!");
+    } catch (err) {
+      console.error("Test write failed:", err);
+      alert("Write failed. Check console for details.");
+    }
+  };
+
+  const labels = Array.from({ length: portfolioHistory.length }, (_, i) => {
     const date = new Date();
-    date.setDate(date.getDate() - (6 - i));
+    date.setDate(date.getDate() - (portfolioHistory.length - 1 - i));
     return date.toLocaleDateString();
   });
 
-  // Top 3 Watch Stocks
-  const watchStocks = [
-    { symbol: "GOOGL", lastPrice: "$2,785.15", change: "+1.75%" },
-    { symbol: "AMZN", lastPrice: "$3,290.05", change: "-0.58%" },
-    { symbol: "MSFT", lastPrice: "$305.22", change: "+0.91%" }
-  ];
-
-  // Purchased Stocks
-  const purchasedStocks = [
-    { symbol: "AAPL", quantity: 10, price: "$175.32" },
-    { symbol: "TSLA", quantity: 5, price: "$720.12" },
-    { symbol: "NVDA", quantity: 8, price: "$498.80" }
-  ];
-
-  // Graph Data
   const data = {
     labels,
     datasets: [
@@ -63,7 +92,6 @@ export default function Portfolio() {
 
   return (
     <Container fluid className="d-flex flex-column align-items-center mt-4">
-      {/* Portfolio Card */}
       <Card className="m-3 p-3 bg-dark text-light w-100" style={{ maxWidth: "400px" }}>
         <div className="text-center">
           <h2 className="fw-bold">{displayName}'s Portfolio</h2>
@@ -73,58 +101,36 @@ export default function Portfolio() {
         </div>
       </Card>
 
-      {/* Portfolio Graph */}
       <Card className="m-3 p-3 bg-secondary text-light w-100" style={{ maxWidth: "700px" }}>
         <h5 className="text-center">Portfolio Value Over Time</h5>
         <Line data={data} />
       </Card>
 
-      {/* Watch Stocks */}
-      <Card className="m-3 p-3 bg-secondary text-light w-100" style={{ maxWidth: "800px" }}>
-        <h5 className="text-center">Top 3 Watch Stocks</h5>
-        <Table striped bordered hover variant="dark">
-          <thead>
-            <tr>
-              <th>Symbol</th>
-              <th>Last Price</th>
-              <th>% Change</th>
-            </tr>
-          </thead>
-          <tbody>
-            {watchStocks.map((stock, index) => (
-              <tr key={index}>
-                <td>{stock.symbol}</td>
-                <td>{stock.lastPrice}</td>
-                <td style={{ color: stock.change.includes("-") ? "red" : "limegreen" }}>{stock.change}</td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </Card>
-
-      {/* Purchased Stocks */}
       <Card className="m-3 p-3 bg-secondary text-light w-100" style={{ maxWidth: "800px" }}>
         <h5 className="text-center">Your Purchased Stocks</h5>
         <Table striped bordered hover variant="dark">
           <thead>
             <tr>
-              <th>Symbol</th>
-              <th>Quantity</th>
-              <th>Purchase Price</th>
+              <th>Stock Name</th>
+              <th>Shares</th>
+              <th>Current Price</th>
             </tr>
           </thead>
           <tbody>
             {purchasedStocks.map((stock, index) => (
               <tr key={index}>
-                <td>{stock.symbol}</td>
-                <td>{stock.quantity}</td>
-                <td>{stock.price}</td>
+                <td>{stock.stockName}</td>
+                <td>{stock.shares}</td>
+                <td>{stock.currentPrice}</td>
               </tr>
             ))}
           </tbody>
         </Table>
       </Card>
-    </Container>
 
+      <Button onClick={handleTestWrite} variant="success" className="m-3">
+        Test Write to Marketvalue Table
+      </Button>
+    </Container>
   );
-};
+}
