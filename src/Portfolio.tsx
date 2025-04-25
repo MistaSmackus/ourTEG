@@ -34,8 +34,8 @@ export default function Portfolio() {
   const [stockName, setStockName] = useState("");
   
   
-  const [shares, setShares] = useState("");
-  const [currentPrice, setCurrentPrice] = useState("");
+  const [shares, setShares] = useState("0");
+  const [currentPrice, setCurrentPrice] = useState("0");
 
 
 
@@ -159,6 +159,28 @@ export default function Portfolio() {
           </tbody>
         </Table>
       </Card>
+
+    <Form onSubmit={handleAddStock}>
+  <Form.Group className="mb-2" controlId="stockName">
+    <Form.Label>Stock Name</Form.Label>
+    <Form.Control type="text" value={stockName} onChange={(e) => setStockName(e.target.value)} />
+  </Form.Group>
+  
+  <Form.Group className="mb-2" controlId="shares">
+    <Form.Label>Shares</Form.Label>
+    <Form.Control type="number" value={shares} onChange={(e) => setShares(e.target.value)} />
+  </Form.Group>
+
+  <Form.Group className="mb-2" controlId="currentPrice">
+    <Form.Label>Current Price</Form.Label>
+    <Form.Control type="number" value={currentPrice} onChange={(e) => setCurrentPrice(e.target.value)} />
+  </Form.Group>
+
+  <Button variant="primary" type="submit">
+    Add Stock
+  </Button>
+</Form>
+
 
       <Button onClick={handleTestWrite} variant="success" className="m-3">
         Test Write to Marketvalue Table
