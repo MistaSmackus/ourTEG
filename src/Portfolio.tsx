@@ -32,6 +32,8 @@ export default function Portfolio() {
   const [purchasedStocks, setPurchasedStocks] = useState<any[]>([]);
 
   const [stockName, setStockName] = useState("");
+  
+  
   const [shares, setShares] = useState("");
   const [currentPrice, setCurrentPrice] = useState("");
 
@@ -75,8 +77,8 @@ export default function Portfolio() {
       });
       alert("Stock added!");
       setStockName("");
-      setShares("");
-      setCurrentPrice("");
+      setShares("0");
+      setCurrentPrice("0");
       const res = await client.models.Ownedstock.list();
       setPurchasedStocks(res.data || []);
     } catch (err) {
