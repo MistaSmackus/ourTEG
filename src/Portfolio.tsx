@@ -49,7 +49,7 @@ export default function Portfolio() {
             if (createRes.data) account = createRes.data; }
         
         const value = account?.accountvalue ?? "0";
-        setTotalPortfolioValue("$" + {value});
+        setTotalPortfolioValue("$" + value);
 
    const historyRes = await client.models.Marketvalue.list();
    const sorted = historyRes.data
