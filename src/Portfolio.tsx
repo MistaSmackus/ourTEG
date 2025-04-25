@@ -18,7 +18,6 @@ import {
   Title
 } from "chart.js";
 
-
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend, Title);
 
 const client = generateClient<Schema>();
@@ -36,13 +35,21 @@ export default function Portfolio() {
     async function fetchData() {
       try {
         const accountRes = await client.models.Account.list();
-        const account = accountRes.data?.[0];
-        setTotalPortfolioValue("$${account?.accountvalue || "0"}");
+        let account = accountRes.data?.[0];
+
+        if (!account) {
+          const createRes = await client.models.Account.create({ accountvalue: "0" });
+          account = createRes.data;
+        }
+
+        const value = account?.accountvalue ?? "0";
+        setTotalPortfolioValue(`$${value}`);
+
         const historyRes = await client.models.Marketvalue.list();
         const sorted = historyRes.data
-        ?.filter(entry => entry.time)
-        ?.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
-        ?.map((entry) => parseFloat(entry.value ?? "0"));
+          ?.filter(entry => entry.time)
+          ?.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
+          ?.map((entry) => parseFloat(entry.value ?? "0"));
         setPortfolioHistory(sorted || []);
 
         const ownedRes = await client.models.Ownedstock.list();
@@ -51,6 +58,7 @@ export default function Portfolio() {
         console.error("Error fetching data:", err);
       }
     }
+
     fetchData();
   }, []);
 
