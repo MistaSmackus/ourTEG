@@ -33,9 +33,7 @@ export default function Portfolio() {
   const [purchasedStocks, setPurchasedStocks] = useState<any[]>([]);
 
   const [stockName, setStockName] = useState("");
-  
-  
-  const [shares, setShares] = useState("0");
+   const [shares, setShares] = useState("0");
   const [currentPrice, setCurrentPrice] = useState("0");
 
 
