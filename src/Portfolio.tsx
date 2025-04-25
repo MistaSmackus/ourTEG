@@ -7,6 +7,7 @@ import { Line } from "react-chartjs-2";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "../amplify/data/resource";
 import { useEffect, useState } from "react";
+import Form from "react-bootstrap/Form";
 import {
   Chart as ChartJS,
   LineElement,
