@@ -33,10 +33,8 @@ export default function Portfolio() {
   const [purchasedStocks, setPurchasedStocks] = useState<any[]>([]);
 
   const [stockName, setStockName] = useState("");
-   const [shares, setShares] = useState("0");
+  const [shares, setShares] = useState("0");
   const [currentPrice, setCurrentPrice] = useState("0");
-
-
 
   useEffect(() => {
     async function fetchData() {
@@ -44,29 +42,30 @@ export default function Portfolio() {
         const accountRes = await client.models.Account.list();
         let account = accountRes.data?.[0];
         if (!account) {
-            const createRes = await client.models.Account.create({ accountvalue: "0" });
-            if (createRes.data) account = createRes.data; }
-        
+          const createRes = await client.models.Account.create({ accountvalue: "0" });
+          if (createRes.data) account = createRes.data;
+        }
+
         const value = account?.accountvalue ?? "0";
         setTotalPortfolioValue("$" + value);
 
-   const historyRes = await client.models.Marketvalue.list();
-   const sorted = historyRes.data
-   ?.filter(entry => entry.time)
-   ?.sort((a, b) => new Date(a.time ?? "").getTime() - new Date(b.time ?? "").getTime())
-   ?.map((entry) => parseFloat(entry.value ?? "0"));
-   setPortfolioHistory(sorted || []);
-   
-   const ownedRes = await client.models.Ownedstock.list();
-   setPurchasedStocks(ownedRes.data || []);
+        const historyRes = await client.models.Marketvalue.list();
+        const sorted = historyRes.data
+          ?.filter(entry => entry.time)
+          ?.sort((a, b) => new Date(a.time ?? "").getTime() - new Date(b.time ?? "").getTime())
+          ?.map((entry) => parseFloat(entry.value ?? "0"));
+        setPortfolioHistory(sorted || []);
+
+        const ownedRes = await client.models.Ownedstock.list();
+        setPurchasedStocks(ownedRes.data || []);
       } catch (err) {
-          console.error("Error fetching data:", err);
+        console.error("Error fetching data:", err);
       }
     }
     fetchData();
   }, []);
 
-   const handleAddStock = async (e: React.FormEvent) => {
+  const handleAddStock = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await client.models.Ownedstock.create({
@@ -159,27 +158,22 @@ export default function Portfolio() {
         </Table>
       </Card>
 
-    <Form onSubmit={handleAddStock}>
-  <Form.Group className="mb-2" controlId="stockName">
-    <Form.Label>Stock Name</Form.Label>
-    <Form.Control type="text" value={stockName} onChange={(e) => setStockName(e.target.value)} />
-  </Form.Group>
-  
-  <Form.Group className="mb-2" controlId="shares">
-    <Form.Label>Shares</Form.Label>
-    <Form.Control type="number" value={shares} onChange={(e) => setShares(e.target.value)} />
-  </Form.Group>
-
-  <Form.Group className="mb-2" controlId="currentPrice">
-    <Form.Label>Current Price</Form.Label>
-    <Form.Control type="number" value={currentPrice} onChange={(e) => setCurrentPrice(e.target.value)} />
-  </Form.Group>
-
-  <Button variant="primary" type="submit">
-    Add Stock
-  </Button>
-</Form>
-
+      <Form onSubmit={handleAddStock} className="bg-dark text-light p-3 rounded w-100" style={{ maxWidth: "600px" }}>
+        <h5 className="text-center">Add a Stock</h5>
+        <Form.Group className="mb-2" controlId="stockName">
+          <Form.Label>Stock Name</Form.Label>
+          <Form.Control type="text" value={stockName} onChange={(e) => setStockName(e.target.value)} />
+        </Form.Group>
+        <Form.Group className="mb-2" controlId="shares">
+          <Form.Label>Shares</Form.Label>
+          <Form.Control type="number" value={shares} onChange={(e) => setShares(e.target.value)} />
+        </Form.Group>
+        <Form.Group className="mb-2" controlId="currentPrice">
+          <Form.Label>Current Price</Form.Label>
+          <Form.Control type="number" value={currentPrice} onChange={(e) => setCurrentPrice(e.target.value)} />
+        </Form.Group>
+        <Button variant="primary" type="submit">Add Stock</Button>
+      </Form>
 
       <Button onClick={handleTestWrite} variant="success" className="m-3">
         Test Write to Marketvalue Table
