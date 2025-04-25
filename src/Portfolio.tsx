@@ -37,12 +37,11 @@ export default function Portfolio() {
       try {
         const accountRes = await client.models.Account.list();
         const account = accountRes.data?.[0];
-        setTotalPortfolioValue(`$${account?.accountvalue || "0"}`);
-
-        const historyRes = await client.models.Marketvalue.list();
+        setTotalPortfconst historyRes = await client.models.Marketvalue.list();
         const sorted = historyRes.data
-          ?.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
-          ?.map((entry) => parseFloat(entry.value));
+        ?.filter(entry => entry.time)
+        ?.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
+        ?.map((entry) => parseFloat(entry.value ?? "0"));
         setPortfolioHistory(sorted || []);
 
         const ownedRes = await client.models.Ownedstock.list();
@@ -51,7 +50,6 @@ export default function Portfolio() {
         console.error("Error fetching data:", err);
       }
     }
-
     fetchData();
   }, []);
 
