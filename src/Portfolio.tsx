@@ -70,8 +70,8 @@ export default function Portfolio() {
     try {
       await client.models.Ownedstock.create({
         stockName,
-        shares: parseInt(shares),
-        currentPrice: parseFloat(currentPrice),
+        shares,
+        currentPrice,
       });
       alert("Stock added!");
       setStockName("");
