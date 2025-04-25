@@ -37,7 +37,8 @@ export default function Portfolio() {
       try {
         const accountRes = await client.models.Account.list();
         const account = accountRes.data?.[0];
-        setTotalPortfconst historyRes = await client.models.Marketvalue.list();
+        setTotalPortfolioValue("$${account?.accountvalue || "0"}");
+        const historyRes = await client.models.Marketvalue.list();
         const sorted = historyRes.data
         ?.filter(entry => entry.time)
         ?.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
