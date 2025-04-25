@@ -31,6 +31,12 @@ export default function Portfolio() {
   const [totalPortfolioValue, setTotalPortfolioValue] = useState("$0.00");
   const [purchasedStocks, setPurchasedStocks] = useState<any[]>([]);
 
+  const [stockName, setStockName] = useState("");
+  const [shares, setShares] = useState("");
+  const [currentPrice, setCurrentPrice] = useState("");
+
+
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -58,6 +64,26 @@ export default function Portfolio() {
     }
     fetchData();
   }, []);
+
+   const handleAddStock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await client.models.Ownedstock.create({
+        stockName,
+        shares: parseInt(shares),
+        currentPrice: parseFloat(currentPrice),
+      });
+      alert("Stock added!");
+      setStockName("");
+      setShares("");
+      setCurrentPrice("");
+      const res = await client.models.Ownedstock.list();
+      setPurchasedStocks(res.data || []);
+    } catch (err) {
+      console.error("Failed to add stock:", err);
+      alert("Error adding stock");
+    }
+  };
 
   const handleTestWrite = async () => {
     try {

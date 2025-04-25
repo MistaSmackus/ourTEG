@@ -22,6 +22,7 @@ export default function BuySell() {
     const [stock, setStock] = useState<Array<Schema["Stock"]["type"]>>([]);
     const [account, setAccount] = useState<Array<Schema["Account"]["type"]>>([]);
     const [transaction, setTransaction] = useState<Array<Schema["Transaction"]["type"]>>([]);
+    const [ownedStock, setOwnedStock] = useState<Array<Schema["Ownedstock"]["type"]>>([]);
 
     const [buyShow, setBuyShow] = useState(false);
     const handleBuyClose = () => setBuyShow(false);
@@ -31,9 +32,8 @@ export default function BuySell() {
     const handleSellClose = () => setSellShow(false);
     const handleSellShow = () => setSellShow(true);
 
-    var owner = "No";
-    var ownShare = "0";
-    const [stockIndex, setStockIndex] = useState("");
+    const [stockBuyIndex, setStockBuyIndex] = useState("");
+    const [stockBuyAmount, setStockBuyAmount] = useState("");
 
         useEffect(() => {
             client.models.Stock.observeQuery().subscribe({
@@ -56,17 +56,118 @@ export default function BuySell() {
             });
     
         }, []); 
-    console.log(transaction);
 
-    function buyStock() {
-        console.log(stockIndex);
-        console.log(stock[Number(stockIndex)].name)
-        console.log(stock);
+                    
+        useEffect(() => {
+            client.models.Ownedstock.observeQuery().subscribe({
+                next: (data) => setOwnedStock([...data.items]),
+            });
+    
+        }, []); 
+    console.log(transaction);
+    console.log(ownedStock);
+
+    {/*function buyStock() {
+        console.log(stock[Number(stockBuyIndex)].name);
+        console.log(stockBuyAmount);
+        let newDate = new Date();
+        let date = newDate.getDate();
+        let month = newDate.getMonth() + 1;
+        let year = newDate.getFullYear();
+        let transAmount = Number((Number(stockBuyAmount)*Number(stock[Number(stockBuyIndex)].price)).toFixed(2));
+        let shareAmount = Number(stockBuyAmount).toFixed(2).toString();
+        let oldBal = Number(account[0].balance)
+        let newBal = 0;
+        let newAccountVal = 0;
+
+        if(account.length===0){
+            window.alert("You have no money. Deposit funds to buy stocks.");
+        }
+        else if(account.length===1 && (oldBal < transAmount)) {
+            client.models.Transaction.create({
+                type: "buystock",
+                amount: transAmount.toString(), 
+                date: `${year}-${month}-${date}`,
+                stock: stock[Number(stockBuyIndex)].name,
+                owns: false,
+                success: false,
+                stockId: stock[Number(stockBuyIndex)].id,
+                shares: shareAmount,
+            }); 
+
+            window.alert("You do not have enough money to buy: "+ stock[Number(stockBuyIndex)].name +". Deposit funds to buy these shares which cost: $" + transAmount +".");
+        }
+        else if (account.length===1 && (oldBal >= transAmount)){
+            if(ownedStock.includes(stock[Number(stockBuyIndex)]) === false) {
+                client.models.Transaction.create({
+                    type: "buystock",
+                    amount: transAmount.toString(), 
+                    date: `${year}-${month}-${date}`,
+                    stock: stock[Number(stockBuyIndex)].name,
+                    owns: true,
+                    success: true,
+                    stockId: stock[Number(stockBuyIndex)].id,
+                    shares: shareAmount,
+                });
+
+                client.models.Ownedstock.create({
+                   currentPrice:  stock[Number(stockBuyIndex)].price,
+                   stockName: stock[Number(stockBuyIndex)].name,
+                   owns: true,
+                   stockId: stock[Number(stockBuyIndex)].id,
+                   shares: shareAmount,
+                });
+
+                newBal = oldBal - transAmount;
+                newAccountVal = Number(account[0].accountvalue) + transAmount;
+
+                client.models.Account.update({
+                    id: account[0].id,
+                    balance: newBal.toFixed(2).toString(),
+                    accountvalue:  newAccountVal.toFixed(0).toString(),
+                })
+            }
+            else {
+                for(let st in ownedStock) {
+                    if(stock[Number(stockBuyIndex)].id === ownedStock[st].stockId) {
+                        client.models.Ownedstock.update({
+                            id: ownedStock[st].id,
+                            currentPrice:  stock[Number(stockBuyIndex)].price,
+                            stockName: stock[Number(stockBuyIndex)].name,
+                            owns: true,
+                            stockId: stock[Number(stockBuyIndex)].id,
+                            shares: shareAmount,
+                        });
+
+                        break;
+                    }
+
+                    
+                }
+
+                client.models.Transaction.create({
+                    type: "buystock",
+                    amount: transAmount.toString(), 
+                    date: `${year}-${month}-${date}`,
+                    stock: stock[Number(stockBuyIndex)].name,
+                    owns: true,
+                    success: true,
+                    stockId: stock[Number(stockBuyIndex)].id,
+                    shares: shareAmount,
+                });
+
+                client.models.Account.update({
+                    id: account[0].id,
+                    balance: newBal.toFixed(2).toString(),
+                    accountvalue:  newAccountVal.toFixed(0).toString(),
+                });
+            }
+        }
         handleBuyClose();
     }
 
     
-    {/*function sellStock() {
+    function sellStock() {
         console.log("test");
         handleSellClose();
     }*/}
@@ -75,7 +176,7 @@ export default function BuySell() {
             <h1 className="text-white text-center mb-4">Time to Engage</h1>
             <div className="d-flex justify-content-between align-items-center mb-4">               
                 <br/><br/>
-                <h2 className="text-muted">Account Balance: ${account.length===1 ? account[0].balance : "0"}</h2>
+                <h2 className="text-muted">Account Balance: ${account.length===1 ? account[0].balance : "0.00"}</h2>
                     <br/><br/>
                 <div>
                     <span className="me-3">Welcome, {user?.signInDetails?.loginId?.split("@")[0]}</span>
@@ -106,8 +207,8 @@ export default function BuySell() {
                                 <thead><tr><th>Owns</th><th>Shares</th><th>Buy</th><th>Sell</th></tr></thead>
                                 <tbody>
                                     <tr>
-                                    <td>{owner}</td>
-                                    <td>{ownShare}</td>
+                                    <td>no</td>
+                                    <td>no</td>
                                     <td>
                                         <Button variant="primary" onClick={handleBuyShow}>
                                             Buy {s.name}
@@ -135,24 +236,27 @@ export default function BuySell() {
                     <Modal.Title>Buy Stock</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                <Form onSubmit={buyStock}>
+                <Form>
                     <Modal.Title>Select a Stock</Modal.Title>
                     <br/>
-                    <Form.Select aria-label="Default select example" id="buySelect" name="buySelect" value={stockIndex} onChange={(e) => setStockIndex(e.target.value)}>
+                    <Form.Select aria-label="Default select example" id="buySelect" name="buySelect" value={stockBuyIndex} onChange={(e) => setStockBuyIndex(e.target.value)}>
                         {stock.map((s, index) => (
                             <option value={index}>{s.name}</option>
                         ))}    
                     </Form.Select>
                     <br/><br/>
                     <Form.Group className="mb-3" controlId="sellForm.ControlInput1">
-                        <Modal.Title>How much would you like to invest?</Modal.Title>
+                        <Modal.Title>How many shares would you like to purchase?</Modal.Title>
                         <br/>
-                        <Form.Control type="text" placeholder="00.00" autoFocus/>
+                        <Form.Control type="text" placeholder="00" autoFocus value={stockBuyAmount} onChange={(e) => setStockBuyAmount(e.target.value)}/>
                     </Form.Group>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={handleBuyClose}>Cancel</Button>
-                        <Button variant="outline-primary" id="buySubmit" as="input" type="submit">Confirm Purchase</Button>
-                    </Modal.Footer>
+                    <br/>
+                    <h3>That many shares will cost: {(Number(stockBuyAmount)*Number(stock[Number(stockBuyIndex)].price)).toFixed(2)}</h3>
+                    <br/>
+                    <h4 className='text-muted'>Your account balance is: ${account.length===1 ? account[0].balance : "0.00"}</h4>
+                    <br/>
+                    <Button variant="secondary" onClick={handleBuyClose}>Cancel</Button>
+                    <Button variant="outline-primary" onClick={handleBuyClose}>Confirm Purchase</Button>    
                 </Form>                     
                 </Modal.Body>
 
