@@ -1,4 +1,3 @@
-
 import Marquee from "react-fast-marquee";
 import Card from "react-bootstrap/Card";
 import Container from "react-bootstrap/Container";
@@ -12,7 +11,7 @@ import { generateClient } from "aws-amplify/data";
 
 const client = generateClient<Schema>();
 
-const features: { title: string; desc: string }[] = [
+const features = [
   { title: "Real-Time Trading", desc: "Instant market access." },
   { title: "Portfolio Tracking", desc: "Manage your investments." },
   { title: "Market Insights", desc: "AI-driven analytics." },
@@ -32,10 +31,12 @@ export default function Home(): JSX.Element {
   useEffect(() => {
     const marketSubscription = client.models.Marketvalue.observeQuery().subscribe({
       next: (data) => {
-        const transformed = data.items.map((item) => ({
-          time: item.time,
-          value: Number(item.value),
-        }));
+        const transformed = data.items
+          .filter((item) => item.time != null && item.value != null)
+          .map((item) => ({
+            time: item.time!,
+            value: Number(item.value),
+          }));
         setMarketVal(transformed);
       },
     });
@@ -139,7 +140,7 @@ export default function Home(): JSX.Element {
         <Marquee>
           {stock.map((s) => (
             <span key={s.id} className="mx-3">
-              {s.symbol}: ${s.price} {" "}
+              {s.symbol}: ${s.price}{" "}
               <span className={s.change?.includes("-") ? "text-danger" : "text-success"}>
                 ({s.change})
               </span>
