@@ -35,31 +35,27 @@ export default function Portfolio() {
   const [stockName, setStockName] = useState("");
   const [shares, setShares] = useState("0");
   const [currentPrice, setCurrentPrice] = useState("0");
- useEffect(() => {
+  
+  useEffect(() => {
   async function fetchData() {
-    try {
-      const accountRes = await client.models.Account.list();
-      let account = accountRes.data?.[0];
-      if (!account) {
-        const createRes = await client.models.Account.create({ accountvalue: "0" });
-        if (createRes.data) account = createRes.data;
-      }
+  try {
+  const value = account?.accountvalue ?? "0";
+  setTotalPortfolioValue("$" + value);
 
-      const value = account?.accountvalue ?? "0";
-      setTotalPortfolioValue("$" + value);
+  const historyRes = await client.models.Marketvalue.list();
+  const sorted = historyRes.data
+    ?.filter(entry => entry.time)
+    ?.sort((a, b) => new Date(a.time ?? "").getTime() - new Date(b.time ?? "").getTime())
+    ?.map((entry) => parseFloat(entry.value ?? "0"));
+  setPortfolioHistory(sorted || []);
 
-      const historyRes = await client.models.Marketvalue.list();
-      const sorted = historyRes.data
-        ?.filter(entry => entry.time)
-        ?.sort((a, b) => new Date(a.time ?? "").getTime() - new Date(b.time ?? "").getTime())
-        ?.map((entry) => parseFloat(entry.value ?? "0"));
-      setPortfolioHistory(sorted || []);
+  const ownedRes = await client.models.Ownedstock.list();
+  setPurchasedStocks(ownedRes.data || []); 
 
-      const ownedRes = await client.models.Ownedstock.list();
-      setPurchasedStocks(ownedRes.data || []);
-    } catch (err) {
-      console.error("Error fetching data:", err);
-    }
+} catch (err) {
+  console.error("Error fetching data:", err);
+}
+  
   }
   fetchData();
 }, []);
