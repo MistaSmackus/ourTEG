@@ -245,15 +245,15 @@ export default function BuySell() {
                         ))}    
                     </Form.Select>
                     <br/><br/>
-                    <Form.Group className="mb-3" controlId="sellForm.ControlInput1">
+                    <Form.Group className="mb-3" controlId="buyForm.ControlInput1">
                         <Modal.Title>How many shares would you like to purchase?</Modal.Title>
                         <br/>
                         <Form.Control type="text" placeholder="00" autoFocus value={stockBuyAmount} onChange={(e) => setStockBuyAmount(e.target.value)}/>
                     </Form.Group>
                     <br/>
-                    <h3>That many shares will cost: {(Number(stockBuyAmount)*Number(stock[Number(stockBuyIndex)].price)).toFixed(2)}</h3>
+                    <Modal.Title>That many shares will cost: {(Number(stockBuyAmount)*Number(stock[Number(stockBuyIndex)].price)).toFixed(2).toString()}</Modal.Title>
                     <br/>
-                    <h4 className='text-muted'>Your account balance is: ${account.length===1 ? account[0].balance : "0.00"}</h4>
+                    <Modal.Title className='text-muted'>Your account balance is: ${account.length===1 ? account[0].balance : "0.00"}</Modal.Title>
                     <br/>
                     <Button variant="secondary" onClick={handleBuyClose}>Cancel</Button>
                     <Button variant="outline-primary" onClick={handleBuyClose}>Confirm Purchase</Button>    
