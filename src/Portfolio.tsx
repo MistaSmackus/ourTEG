@@ -65,39 +65,50 @@ export default function Portfolio() {
     fetchData();
   }, []);
 
-  const handleAddStock = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await client.models.Ownedstock.create({
-        stockName,
-        shares,
-        currentPrice,
-      });
-      alert("Stock added!");
-      setStockName("");
-      setShares("0");
-      setCurrentPrice("0");
-      const res = await client.models.Ownedstock.list();
-      setPurchasedStocks(res.data || []);
-    } catch (err) {
-      console.error("Failed to add stock:", err);
-      alert("Error adding stock");
-    }
-  };
+const handleAddStock = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    
+    await client.models.Ownedstock.create({
+      stockName,
+      shares,
+      currentPrice,
+    });
 
-  const handleTestWrite = async () => {
-    try {
-      const res = await client.models.Marketvalue.create({
-        value: (Math.random() * 100000).toFixed(2),
-        time: new Date().toISOString(),
-      });
-      console.log("Test write success:", res);
-      alert("Test write to DynamoDB succeeded!");
-    } catch (err) {
-      console.error("Test write failed:", err);
-      alert("Write failed. Check console for details.");
-    }
-  };
+    const allStocksRes = await client.models.Ownedstock.list();
+    const allStocks = allStocksRes.data || [];
+
+    const total = allStocks.reduce((acc, s) => {
+      return acc + parseFloat(s.currentPrice || "0") * parseInt(s.shares || "0");
+    }, 0);
+
+    
+    await client.models.Marketvalue.create({
+      value: total.toFixed(2),
+      time: new Date().toISOString(),
+    });
+
+   
+    setStockName("");
+    setShares("0");
+    setCurrentPrice("0");
+    setPurchasedStocks(allStocks);
+
+    const historyRes = await client.models.Marketvalue.list();
+    const sorted = historyRes.data
+      ?.filter(entry => entry.time)
+      ?.sort((a, b) => new Date(a.time ?? "").getTime() - new Date(b.time ?? "").getTime())
+      ?.map((entry) => parseFloat(entry.value ?? "0"));
+    setPortfolioHistory(sorted || []);
+
+    alert("Stock added and graph updated!");
+  } catch (err) {
+    console.error("Failed to add stock:", err);
+    alert("Error adding stock");
+  }
+};
+
+
 
   const labels = Array.from({ length: portfolioHistory.length }, (_, i) => {
     const date = new Date();
@@ -175,9 +186,6 @@ export default function Portfolio() {
         <Button variant="primary" type="submit">Add Stock</Button>
       </Form>
 
-      <Button onClick={handleTestWrite} variant="success" className="m-3">
-        Test Write to Marketvalue Table
-      </Button>
-    </Container>
+  
   );
 }
