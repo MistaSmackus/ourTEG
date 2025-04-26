@@ -29,7 +29,7 @@ export default function Portfolio() {
   const displayName = fallbackName || "Guest";
 
   const [portfolioHistory, setPortfolioHistory] = useState<number[]>([]);
-  const [totalPortfolioValue, setTotalPortfolioValue] = useState("$0.00");
+  const [totalEarnings, setTotalEarnings] = useState("$0.00");
   const [accountBalance, setAccountBalance] = useState("$0.00");
   const [purchasedStocks, setPurchasedStocks] = useState<any[]>([]);
   const [stockName, setStockName] = useState("");
@@ -46,11 +46,17 @@ export default function Portfolio() {
           if (createRes.data) account = createRes.data;
         }
 
-        const value = account?.accountvalue ?? "0";
-        setTotalPortfolioValue("$" + value);
-
         const balance = account?.balance ?? "0";
         setAccountBalance("$" + balance);
+
+        const ownedRes = await client.models.Ownedstock.list();
+        const owned = ownedRes.data || [];
+        setPurchasedStocks(owned);
+
+        const total = owned.reduce((acc, s) => {
+          return acc + parseFloat(s.currentPrice || "0") * parseInt(s.shares || "0");
+        }, 0);
+        setTotalEarnings("$" + total.toFixed(2));
 
         const historyRes = await client.models.Marketvalue.list();
         const sorted = historyRes.data
@@ -58,10 +64,6 @@ export default function Portfolio() {
           ?.sort((a, b) => new Date(a.time ?? "").getTime() - new Date(b.time ?? "").getTime())
           ?.map((entry) => parseFloat(entry.value ?? "0"));
         setPortfolioHistory(sorted || []);
-
-        const ownedRes = await client.models.Ownedstock.list();
-        setPurchasedStocks(ownedRes.data || []);
-
       } catch (err) {
         console.error("Error fetching data:", err);
       }
@@ -94,6 +96,7 @@ export default function Portfolio() {
       setShares("0");
       setCurrentPrice("0");
       setPurchasedStocks(allStocks);
+      setTotalEarnings("$" + total.toFixed(2));
 
       const historyRes = await client.models.Marketvalue.list();
       const sorted = historyRes.data
@@ -136,7 +139,7 @@ export default function Portfolio() {
         <div className="text-center">
           <h2 className="fw-bold">{displayName}'s Portfolio</h2>
           <h4>
-            Total Value: <span className="text-success">{totalPortfolioValue}</span>
+            Total Earnings: <span className="text-success">{totalEarnings}</span>
           </h4>
           <h5>
             Available Cash: <span className="text-info">{accountBalance}</span>
