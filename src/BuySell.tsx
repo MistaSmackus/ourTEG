@@ -8,7 +8,7 @@ import { generateClient } from "aws-amplify/data";
 const client = generateClient<Schema>();
 
 export default function BuySell() {
-  const { user } = useAuthenticator();
+  const { user: _user } = useAuthenticator(); // Prefix to silence unused warning
   const [stock, setStock] = useState<Array<Schema["Stock"]["type"]>>([]);
   const [account, setAccount] = useState<Array<Schema["Account"]["type"]>>([]);
   const [transaction, setTransaction] = useState<Array<Schema["Transaction"]["type"]>>([]);
@@ -71,7 +71,7 @@ export default function BuySell() {
           stockName: selectedStock.name,
           owns: true,
           stockId: selectedStock.id,
-          shares: (Number(existingOwned.shares) + sharesToBuy).toFixed(2).toString(),
+          shares: (Number(existingOwned.shares) + sharesToBuy).toFixed(2),
         });
       } else {
         await client.models.Ownedstock.create({
@@ -79,19 +79,19 @@ export default function BuySell() {
           stockName: selectedStock.name,
           owns: true,
           stockId: selectedStock.id,
-          shares: sharesToBuy.toFixed(2).toString(),
+          shares: sharesToBuy.toFixed(2),
         });
       }
 
       await client.models.Transaction.create({
         type: "buystock",
-        amount: totalCost.toFixed(2).toString(),
+        amount: totalCost.toFixed(2),
         date: new Date().toISOString().split("T")[0],
         stock: selectedStock.name,
         owns: true,
         success: true,
         stockId: selectedStock.id,
-        shares: sharesToBuy.toFixed(2).toString(),
+        shares: sharesToBuy.toFixed(2),
       });
 
       const newBalance = oldBalance - totalCost;
@@ -99,8 +99,8 @@ export default function BuySell() {
 
       await client.models.Account.update({
         id: account[0].id,
-        balance: newBalance.toFixed(2).toString(),
-        accountvalue: newAccountValue.toFixed(2).toString(),
+        balance: newBalance.toFixed(2),
+        accountvalue: newAccountValue.toFixed(2),
       });
 
       handleBuyClose();
@@ -155,24 +155,27 @@ export default function BuySell() {
           <Form>
             <Form.Group>
               <Form.Label>Select Stock:</Form.Label>
-              <Form.Select value={stockBuyIndex} onChange={(e) => setStockBuyIndex(Number(e.target.value))}>
+              <Form.Select
+                value={stockBuyIndex}
+                onChange={(e) => setStockBuyIndex(Number(e.target.value))} // Cast to number
+              >
                 {stock.map((s, index) => (
                   <option key={s.id} value={index}>{s.name}</option>
                 ))}
               </Form.Select>
             </Form.Group>
 
-            <Form.Group>
+            <Form.Group className="mt-3">
               <Form.Label>Number of Shares:</Form.Label>
               <Form.Control
                 type="number"
                 placeholder="0"
                 value={stockBuyAmount}
-                onChange={(e) => setStockBuyAmount(Number(e.target.value))}
+                onChange={(e) => setStockBuyAmount(Number(e.target.value))} // Cast to number
               />
             </Form.Group>
 
-            <div className="d-flex justify-content-end mt-3">
+            <div className="d-flex justify-content-end mt-4">
               <Button variant="secondary" onClick={handleBuyClose} className="me-2">Cancel</Button>
               <Button variant="primary" onClick={buyStock}>Confirm Purchase</Button>
             </div>
