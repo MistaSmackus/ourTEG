@@ -17,7 +17,7 @@ export default function AddStocks() {
     const subscription = client.models.Stock.observeQuery().subscribe({
       next: (data) => setStock([...data.items]),
     });
-    return () => subscription.unsubscribe(); // cleanup
+    return () => subscription.unsubscribe();
   }, []);
 
   async function createStock(e: React.FormEvent<HTMLFormElement>) {
@@ -30,7 +30,6 @@ export default function AddStocks() {
         price: Number(price).toFixed(2).toString(),
       });
 
-      // Optional: Clear fields after adding
       setName("");
       setSymbol("");
       setPrice(0);
@@ -38,7 +37,7 @@ export default function AddStocks() {
       alert("Stock added successfully!");
     } catch (err) {
       console.error("Failed to add stock:", err);
-      alert("Something went wrong. Please try again.");
+      alert("Something went wrong.");
     }
   }
 

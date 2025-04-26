@@ -1,5 +1,3 @@
-
-
 import Marquee from "react-fast-marquee";
 import Card from "react-bootstrap/Card";
 import Container from "react-bootstrap/Container";
@@ -24,17 +22,17 @@ export default function Home(): JSX.Element {
   const [marketval, setMarketVal] = useState<Array<Schema["Marketvalue"]["type"]>>([]);
 
   useEffect(() => {
-    const stockSubscription = client.models.Stock.observeQuery().subscribe({
+    const stockSub = client.models.Stock.observeQuery().subscribe({
       next: (data) => setStock([...data.items]),
     });
-    return () => stockSubscription.unsubscribe();
+    return () => stockSub.unsubscribe();
   }, []);
 
   useEffect(() => {
-    const marketSubscription = client.models.Marketvalue.observeQuery().subscribe({
+    const marketSub = client.models.Marketvalue.observeQuery().subscribe({
       next: (data) => setMarketVal([...data.items]),
     });
-    return () => marketSubscription.unsubscribe();
+    return () => marketSub.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -49,7 +47,7 @@ export default function Home(): JSX.Element {
     };
   }, [stock]);
 
-  function generateRandomNight() {
+  async function generateRandomNight() {
     if (stock.length === 0) return;
 
     for (let i = 0; i < 5; i++) {
@@ -60,7 +58,7 @@ export default function Home(): JSX.Element {
       const newPrice = oldPrice + change;
       const mentions = Math.floor(Math.random() * 100);
 
-      client.models.Stock.update({
+      await client.models.Stock.update({
         id: selectedStock.id,
         price: newPrice.toFixed(2).toString(),
         change: `+${change.toFixed(2)}`,
@@ -68,26 +66,9 @@ export default function Home(): JSX.Element {
         mentions: mentions.toString(),
       });
     }
-
-    for (let i = 0; i < 5; i++) {
-      const randIndex = Math.floor(Math.random() * stock.length);
-      const selectedStock = stock[randIndex];
-      const change = Math.floor(Math.random() * 5);
-      const oldPrice = Number(selectedStock.price);
-      const newPrice = oldPrice - change;
-      const mentions = Math.floor(Math.random() * 100);
-
-      client.models.Stock.update({
-        id: selectedStock.id,
-        price: newPrice.toFixed(2).toString(),
-        change: `-${change.toFixed(2)}`,
-        last: oldPrice.toFixed(2).toString(),
-        mentions: mentions.toString(),
-      });
-    }
   }
 
-  function generateRandomDayIncrease() {
+  async function generateRandomDayIncrease() {
     if (stock.length === 0) return;
 
     const randIndex = Math.floor(Math.random() * stock.length);
@@ -97,7 +78,7 @@ export default function Home(): JSX.Element {
     const newPrice = oldPrice + change;
     const mentions = Math.floor(Math.random() * 100);
 
-    client.models.Stock.update({
+    await client.models.Stock.update({
       id: selectedStock.id,
       price: newPrice.toFixed(2).toString(),
       change: `+${change.toFixed(2)}`,
@@ -106,20 +87,18 @@ export default function Home(): JSX.Element {
     });
   }
 
-  function generateRandomDayDecrease() {
+  async function generateRandomDayDecrease() {
     if (stock.length === 0) return;
 
     const randIndex = Math.floor(Math.random() * stock.length);
     const selectedStock = stock[randIndex];
     const oldPrice = Number(selectedStock.price);
     let change = Math.floor(Math.random() * 10);
-    if (change > oldPrice) {
-      change = Math.floor(Math.random() * 5);
-    }
+    if (change > oldPrice) change = Math.floor(Math.random() * 5);
     const newPrice = oldPrice - change;
     const mentions = Math.floor(Math.random() * 100);
 
-    client.models.Stock.update({
+    await client.models.Stock.update({
       id: selectedStock.id,
       price: newPrice.toFixed(2).toString(),
       change: `-${change.toFixed(2)}`,
@@ -135,7 +114,7 @@ export default function Home(): JSX.Element {
         <Marquee>
           {stock.map((s) => (
             <span key={s.id} className="mx-3">
-              {s.symbol}: ${s.price} {" "}
+              {s.symbol}: ${s.price}{" "}
               <span className={s.change?.toString().includes("-") ? "text-danger" : "text-success"}>
                 ({s.change})
               </span>
@@ -144,13 +123,13 @@ export default function Home(): JSX.Element {
         </Marquee>
       </div>
 
-      {/* Hero Section */}
+      {/* Hero */}
       <div className="text-center mb-4">
         <h1 className="fw-bold">Your Wealth, Your Future -- Powered by Titan.</h1>
         <p className="text-muted">Rise Above. Invest Like a Titan.</p>
       </div>
 
-      {/* Market Overview */}
+      {/* Market Snapshot */}
       <Card className="w-100 shadow-sm mb-4" style={{ maxWidth: "600px" }}>
         <Card.Body>
           <h2 className="h5 mb-3">Market Snapshot</h2>
@@ -165,7 +144,7 @@ export default function Home(): JSX.Element {
         </Card.Body>
       </Card>
 
-      {/* Features Section */}
+      {/* Features */}
       <Container>
         <Row className="g-3">
           {features.map((feature, index) => (
