@@ -153,29 +153,4 @@ export default function BuySell() {
         <Modal.Body>
           <Form>
             <Form.Group>
-              <Form.Label>Select Stock:</Form.Label>
-              <Form.Select value={stockBuyIndex} onChange={(e) => setStockBuyIndex(Number(e.target.value))}>
-                {stock.map((s, index) => (
-                  <option key={s.id} value={index}>{s.name}</option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-            <br />
-            <Form.Group>
-              <Form.Label>Number of Shares:</Form.Label>
-              <Form.Control
-                type="number"
-                placeholder="0"
-                value={stockBuyAmount}
-                onChange={(e) => setStockBuyAmount(Number(e.target.value))}
-              />
-            </Form.Group>
-            <br />
-            <Button variant="secondary" onClick={handleBuyClose}>Cancel</Button>
-            <Button variant="primary" onClick={buyStock}>Confirm Purchase</Button>
-          </Form>
-        </Modal.Body>
-      </Modal>
-    </Container>
-  );
-}
+              <Form

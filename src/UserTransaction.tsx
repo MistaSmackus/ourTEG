@@ -1,4 +1,3 @@
-
 import Form from 'react-bootstrap/Form';
 import Container from "react-bootstrap/Container";
 import Button from 'react-bootstrap/Button';
@@ -13,105 +12,95 @@ const client = generateClient<Schema>();
 export default function UserTransaction() {
   const [transaction, setTransaction] = useState<Array<Schema["Transaction"]["type"]>>([]);
   const [account, setAccount] = useState<Array<Schema["Account"]["type"]>>([]);
-  const [depo, setDepo] = useState<string>("");
-  const [withdraw, setWithdraw] = useState<string>("");
+  const [depo, setDepo] = useState("");
+  const [withdraw, setWithdraw] = useState("");
 
   useEffect(() => {
     const transactionSub = client.models.Transaction.observeQuery().subscribe({
       next: (data) => setTransaction([...data.items]),
     });
-    return () => transactionSub.unsubscribe();
-  }, []);
-
-  useEffect(() => {
     const accountSub = client.models.Account.observeQuery().subscribe({
       next: (data) => setAccount([...data.items]),
     });
-    return () => accountSub.unsubscribe();
+    return () => {
+      transactionSub.unsubscribe();
+      accountSub.unsubscribe();
+    };
   }, []);
 
   async function createDeposits(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
     if (!depo || isNaN(Number(depo))) {
       alert("Please enter a valid deposit amount.");
       return;
     }
 
-    const depositAmount = Number(depo);
-    const today = new Date().toISOString().split("T")[0];
+    const amount = Number(depo);
+    const newDate = new Date().toISOString().split("T")[0];
 
-    try {
-      if (account.length === 0) {
-        await client.models.Transaction.create({
-          type: "deposit",
-          amount: depositAmount.toFixed(2).toString(),
-          date: today,
-          success: true,
-        });
-
-        await client.models.Account.create({
-          balance: depositAmount.toFixed(2).toString(),
-        });
-      } else {
-        const oldBal = Number(account[0].balance);
-        const newBalance = oldBal + depositAmount;
-
-        await client.models.Transaction.create({
-          type: "deposit",
-          amount: depositAmount.toFixed(2).toString(),
-          date: today,
-          success: true,
-        });
-
-        await client.models.Account.update({
-          id: account[0].id,
-          balance: newBalance.toFixed(2).toString(),
-        });
-      }
-
-      setDepo("");
-    } catch (err) {
-      console.error("Failed to deposit:", err);
-    }
-  }
-
-  async function createWithdraw(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    if (!withdraw || isNaN(Number(withdraw))) {
-      alert("Please enter a valid withdraw amount.");
-      return;
-    }
-
-    const withdrawAmount = Number(withdraw);
-    const today = new Date().toISOString().split("T")[0];
-
-    if (account.length === 0 || Number(account[0].balance) < withdrawAmount) {
+    if (account.length === 0) {
       await client.models.Transaction.create({
-        type: "withdraw",
-        amount: withdrawAmount.toFixed(2).toString(),
-        date: today,
-        success: false,
+        type: "deposit",
+        amount: amount.toFixed(2).toString(),
+        date: newDate,
+        success: true,
       });
-      alert("Unable to withdraw. Balance too low for that amount.");
+      await client.models.Account.create({
+        balance: amount.toFixed(2).toString(),
+      });
     } else {
       const oldBal = Number(account[0].balance);
-      const newBalance = oldBal - withdrawAmount;
+      const newBal = oldBal + amount;
 
       await client.models.Transaction.create({
-        type: "withdraw",
-        amount: withdrawAmount.toFixed(2).toString(),
-        date: today,
+        type: "deposit",
+        amount: amount.toFixed(2).toString(),
+        date: newDate,
         success: true,
       });
 
       await client.models.Account.update({
         id: account[0].id,
-        balance: newBalance.toFixed(2).toString(),
+        balance: newBal.toFixed(2).toString(),
       });
     }
+    setDepo("");
+  }
 
+  async function createWithdraw(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!withdraw || isNaN(Number(withdraw))) {
+      alert("Please enter a valid withdrawal amount.");
+      return;
+    }
+
+    const amount = Number(withdraw);
+    const newDate = new Date().toISOString().split("T")[0];
+
+    if (account.length === 0 || Number(account[0].balance) < amount) {
+      await client.models.Transaction.create({
+        type: "withdraw",
+        amount: amount.toFixed(2).toString(),
+        date: newDate,
+        success: false,
+      });
+      alert("Insufficient balance to withdraw.");
+    } else {
+      const oldBal = Number(account[0].balance);
+      const newBal = oldBal - amount;
+
+      await client.models.Transaction.create({
+        type: "withdraw",
+        amount: amount.toFixed(2).toString(),
+        date: newDate,
+        success: true,
+      });
+
+      await client.models.Account.update({
+        id: account[0].id,
+        balance: newBal.toFixed(2).toString(),
+      });
+    }
     setWithdraw("");
   }
 
@@ -132,11 +121,11 @@ export default function UserTransaction() {
               placeholder="00.00"
               value={depo}
               onChange={(e) => setDepo(e.target.value)}
+              required
             />
           </Form.Group>
           <Button variant="outline-primary" type="submit">Deposit</Button>
         </Form>
-
         <br /><br />
 
         <h2>Withdraw Funds</h2>
@@ -149,11 +138,11 @@ export default function UserTransaction() {
               placeholder="00.00"
               value={withdraw}
               onChange={(e) => setWithdraw(e.target.value)}
+              required
             />
           </Form.Group>
           <Button variant="outline-danger" type="submit">Withdraw</Button>
         </Form>
-
         <br /><br />
       </div>
 
@@ -167,8 +156,8 @@ export default function UserTransaction() {
             </Accordion.Header>
             <Accordion.Body>
               <Col>Amount: ${trans.amount}</Col>
-              <Col>{trans.stock ? `Stock: ${trans.stock}` : ""}</Col>
               <Col>Transaction: {trans.success ? "Success" : "Failure"}</Col>
+              {trans.stock && <Col>Stock: {trans.stock}</Col>}
             </Accordion.Body>
           </Accordion.Item>
         ))}
