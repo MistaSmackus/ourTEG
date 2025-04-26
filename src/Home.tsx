@@ -90,11 +90,10 @@ export default function Home(): JSX.Element {
 
     client.models.Stock.update({
       id: selectedStock.id,
-      price: newPrice.toFixed(2),        // Must be string
+      price: newPrice.toFixed(2),       
       change: formatChange(change, isIncrease),
-      last: oldPrice.toFixed(2),          // Must be string
-      mentions: mentions.toString(),      // Must be string (schema expects integer but DynamoDB likes strings in TS)
-    });
+      last: oldPrice.toFixed(2),          
+      mentions: mentions,      
   }
 
   return (
