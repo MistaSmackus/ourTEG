@@ -93,7 +93,7 @@ export default function Portfolio() {
       <Card className="bg-dark text-light mb-4 p-3">
         <h4>Account Overview</h4>
         <p><strong>Username:</strong> {user?.username}</p>
-        <p><strong>Balance:</strong> ${account?.balance?.toFixed(2) || "0.00"}</p>
+        <p><strong>Balance:</strong> ${Number(account?.balance ?? 0).toFixed(2)}</p>
       </Card>
 
       {/* Portfolio Line Chart */}
