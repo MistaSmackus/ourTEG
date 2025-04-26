@@ -45,8 +45,10 @@ export default function Home(): JSX.Element {
 
   useEffect(() => {
     window.onbeforeunload = generateRandomNight;
+
     const intervalInc = setInterval(generateRandomDayIncrease, 90000);
     const intervalDec = setInterval(generateRandomDayDecrease, 1000000);
+
     return () => {
       clearInterval(intervalInc);
       clearInterval(intervalDec);
@@ -57,29 +59,31 @@ export default function Home(): JSX.Element {
     if (stock.length === 0) return;
 
     for (let i = 0; i < 5; i++) {
-      updateRandomStock(true);
+      updateStockRandomly(true);
     }
 
     for (let i = 0; i < 5; i++) {
-      updateRandomStock(false);
+      updateStockRandomly(false);
     }
   }
 
   function generateRandomDayIncrease() {
     if (stock.length === 0) return;
-    updateRandomStock(true);
+    updateStockRandomly(true);
   }
 
   function generateRandomDayDecrease() {
     if (stock.length === 0) return;
-    updateRandomStock(false);
+    updateStockRandomly(false);
   }
 
-  function updateRandomStock(isIncrease: boolean) {
+  function updateStockRandomly(isIncrease: boolean) {
     const randIndex = Math.floor(Math.random() * stock.length);
     const selectedStock = stock[randIndex];
+    if (!selectedStock) return;
+
     const oldPrice = Number(selectedStock.price);
-    let change = Math.floor(Math.random() * (isIncrease ? 10 : 5));
+    let change = Math.floor(Math.random() * 10);
 
     if (!isIncrease && change > oldPrice) {
       change = Math.floor(Math.random() * 5);
@@ -90,10 +94,10 @@ export default function Home(): JSX.Element {
 
     client.models.Stock.update({
       id: selectedStock.id,
-      price: Number(newPrice.toFixed(2)),
+      price: Number(newPrice.toFixed(2)), 
       change: `${isIncrease ? "+" : "-"}${change.toFixed(2)}`,
-      last: Number(oldPrice.toFixed(2)),
-      mentions: mentions.toString(),
+      last: Number(oldPrice.toFixed(2)), 
+      mentions: mentions.toString(), 
     });
   }
 
@@ -103,7 +107,7 @@ export default function Home(): JSX.Element {
         <Marquee>
           {stock.map((s) => (
             <span key={s.id} className="mx-3">
-              {s.symbol}: ${s.price}{" "}
+              {s.symbol}: ${s.price}
               <span className={s.change?.includes("-") ? "text-danger" : "text-success"}>
                 ({s.change})
               </span>
@@ -133,8 +137,8 @@ export default function Home(): JSX.Element {
 
       <Container>
         <Row className="g-3">
-          {features.map((feature, index) => (
-            <Col key={index} md={4}>
+          {features.map((feature, idx) => (
+            <Col key={idx} md={4}>
               <Card className="p-3 text-center shadow-sm">
                 <Card.Body>
                   <h5>{feature.title}</h5>
