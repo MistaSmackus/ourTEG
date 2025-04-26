@@ -4,10 +4,10 @@ const schema = a.schema({
   Stock: a.model({
     name: a.string(),
     symbol: a.string(),
-    price: a.float(),
-    change: a.float().default(0),
+    price: a.string(),
+    change: a.string().default("0"),
     volume: a.integer().default(0),
-    last: a.float().default(0),
+    last: a.string().default("0"),
     mentions: a.integer().default(0),
   }).authorization((allow) => [
     allow.authenticated().to(["read"]),
@@ -15,7 +15,7 @@ const schema = a.schema({
   ]),
 
   Marketvalue: a.model({
-    value: a.float().default(0),
+    value: a.string().default("0"),
     time: a.string(),
   }).authorization((allow) => [
     allow.authenticated().to(["read"]),
@@ -38,31 +38,31 @@ const schema = a.schema({
   ]),
 
   Transaction: a.model({
-    type: a.string(),             // "BUY" or "SELL"
-    amount: a.float(),             // amount bought/sold
-    date: a.string(),              // date of transaction
-    stock: a.string(),             // name of stock
+    type: a.string(),
+    amount: a.string(),
+    date: a.string(),
+    stock: a.string(),
     owns: a.boolean().default(false),
     success: a.boolean().default(false),
-    stockId: a.string(),           // reference to stock id
-    shares: a.float(),             // number of shares
+    stockId: a.string(),
+    shares: a.string(),
   }).authorization((allow) => [
     allow.owner(),
   ]),
 
   Ownedstock: a.model({
     stockName: a.string(),
-    currentPrice: a.float(),
+    currentPrice: a.string(),
     owns: a.boolean().default(false),
     stockId: a.string(),
-    shares: a.float(),
+    shares: a.string(),
   }).authorization((allow) => [
     allow.owner(),
   ]),
 
   Account: a.model({
-    accountvalue: a.float().default(0),
-    balance: a.float().default(0),
+    accountvalue: a.string().default("0"),
+    balance: a.string().default("0"),
   }).authorization((allow) => [
     allow.owner(),
   ]),
