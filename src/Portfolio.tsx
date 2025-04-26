@@ -16,7 +16,7 @@ import {
   PointElement,
   Tooltip,
   Legend,
-  Title
+  Title,
 } from "chart.js";
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend, Title);
@@ -36,37 +36,18 @@ export default function Portfolio() {
   const [shares, setShares] = useState("0");
   const [currentPrice, setCurrentPrice] = useState("0");
 
-useEffect(() => {
-  async function fetchData() {
-    try {
-      const accountRes = await client.models.Account.list();
-      let account = accountRes.data?.[0];
-      if (!account) {
-        const createRes = await client.models.Account.create({ accountvalue: "0" });
-        if (createRes.data) account = createRes.data;
-      }
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const accountRes = await client.models.Account.list();
+        let account = accountRes.data?.[0];
+        if (!account) {
+          const createRes = await client.models.Account.create({ accountvalue: "0" });
+          if (createRes.data) account = createRes.data;
+        }
 
-      const value = account?.accountvalue ?? "0";
-      setTotalPortfolioValue("$" + value);
-
-      const historyRes = await client.models.Marketvalue.list();
-      const sorted = historyRes.data
-        ?.filter(entry => entry.time)
-        ?.sort((a, b) => new Date(a.time ?? "").getTime() - new Date(b.time ?? "").getTime())
-        ?.map(entry => parseFloat(entry.value ?? "0"));
-      setPortfolioHistory(sorted || []);
-
-      const ownedRes = await client.models.Ownedstock.list();
-      setPurchasedStocks(ownedRes.data || []);
-
-    } catch (err) {
-      console.error("Error fetching data:", err);
-    }
-  }
-
-  fetchData();
-}, []);
-
+        const value = account?.accountvalue ?? "0";
+        setTotalPortfolioValue("$" + value);
 
         const historyRes = await client.models.Marketvalue.list();
         const sorted = historyRes.data
@@ -84,50 +65,45 @@ useEffect(() => {
     fetchData();
   }, []);
 
-const handleAddStock = async (e: React.FormEvent) => {
-  e.preventDefault();
-  try {
-    
-    await client.models.Ownedstock.create({
-      stockName,
-      shares,
-      currentPrice,
-    });
+  const handleAddStock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await client.models.Ownedstock.create({
+        stockName,
+        shares,
+        currentPrice,
+      });
 
-    const allStocksRes = await client.models.Ownedstock.list();
-    const allStocks = allStocksRes.data || [];
+      const allStocksRes = await client.models.Ownedstock.list();
+      const allStocks = allStocksRes.data || [];
 
-    const total = allStocks.reduce((acc, s) => {
-      return acc + parseFloat(s.currentPrice || "0") * parseInt(s.shares || "0");
-    }, 0);
+      const total = allStocks.reduce((acc, s) => {
+        return acc + parseFloat(s.currentPrice || "0") * parseInt(s.shares || "0");
+      }, 0);
 
-    
-    await client.models.Marketvalue.create({
-      value: total.toFixed(2),
-      time: new Date().toISOString(),
-    });
+      await client.models.Marketvalue.create({
+        value: total.toFixed(2),
+        time: new Date().toISOString(),
+      });
 
-   
-    setStockName("");
-    setShares("0");
-    setCurrentPrice("0");
-    setPurchasedStocks(allStocks);
+      setStockName("");
+      setShares("0");
+      setCurrentPrice("0");
+      setPurchasedStocks(allStocks);
 
-    const historyRes = await client.models.Marketvalue.list();
-    const sorted = historyRes.data
-      ?.filter(entry => entry.time)
-      ?.sort((a, b) => new Date(a.time ?? "").getTime() - new Date(b.time ?? "").getTime())
-      ?.map((entry) => parseFloat(entry.value ?? "0"));
-    setPortfolioHistory(sorted || []);
+      const historyRes = await client.models.Marketvalue.list();
+      const sorted = historyRes.data
+        ?.filter(entry => entry.time)
+        ?.sort((a, b) => new Date(a.time ?? "").getTime() - new Date(b.time ?? "").getTime())
+        ?.map((entry) => parseFloat(entry.value ?? "0"));
+      setPortfolioHistory(sorted || []);
 
-    alert("Stock added and graph updated!");
-  } catch (err) {
-    console.error("Failed to add stock:", err);
-    alert("Error adding stock");
-  }
-};
-
-
+      alert("Stock added and graph updated!");
+    } catch (err) {
+      console.error("Failed to add stock:", err);
+      alert("Error adding stock");
+    }
+  };
 
   const labels = Array.from({ length: portfolioHistory.length }, (_, i) => {
     const date = new Date();
@@ -145,9 +121,9 @@ const handleAddStock = async (e: React.FormEvent) => {
         backgroundColor: "rgba(75,192,192,0.2)",
         tension: 0.4,
         pointRadius: 5,
-        pointBackgroundColor: "rgba(75,192,192,1)"
-      }
-    ]
+        pointBackgroundColor: "rgba(75,192,192,1)",
+      },
+    ],
   };
 
   return (
@@ -202,9 +178,10 @@ const handleAddStock = async (e: React.FormEvent) => {
           <Form.Label>Current Price</Form.Label>
           <Form.Control type="number" value={currentPrice} onChange={(e) => setCurrentPrice(e.target.value)} />
         </Form.Group>
-        <Button variant="primary" type="submit">Add Stock</Button>
+        <Button variant="primary" type="submit">
+          Add Stock
+        </Button>
       </Form>
-      </Container>
-  
+    </Container>
   );
 }
