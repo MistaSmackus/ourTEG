@@ -53,10 +53,10 @@ export default function Portfolio() {
         const owned = ownedRes.data || [];
         setPurchasedStocks(owned);
 
-        const total = owned.reduce((acc, s) => {
+        const stockTotal = owned.reduce((acc, s) => {
           return acc + parseFloat(s.currentPrice || "0") * parseInt(s.shares || "0");
         }, 0);
-        setTotalEarnings("$" + total.toFixed(2));
+        setTotalEarnings("$" + stockTotal.toFixed(2));
 
         const historyRes = await client.models.Marketvalue.list();
         const sorted = historyRes.data

@@ -28,7 +28,7 @@ var mentions;
 export default function Home(): JSX.Element {
   const [stock, setStock] = useState<Array<Schema["Stock"]["type"]>>([]);
   const [marketval, setMarketVal] = useState<Array<Schema["Marketvalue"]["type"]>>([]);
-  var [currentTime, setCurrentTime] = useState(new Date());
+  //var [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
       client.models.Stock.observeQuery().subscribe({
@@ -44,13 +44,13 @@ export default function Home(): JSX.Element {
 
   }, []);
 
-  useEffect(() => {
+  {/*useEffect(() => {
     const intervalId = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, []); 
+  }, []); */}
 
 
   function generateRandomNight() {
@@ -134,7 +134,7 @@ export default function Home(): JSX.Element {
     });
   }
 
-  function generateMarketValue() {
+  {/*function generateMarketValue() {
     var marVal = 0;
     var setTime = "";
 
@@ -149,9 +149,9 @@ export default function Home(): JSX.Element {
       value: marVal.toFixed(0).toString(),
       time: setTime,
     });
-  }
+  }*/}
 
-  window.onload = generateMarketValue;
+  //window.onload = generateMarketValue;
   window.onbeforeunload = generateRandomNight;
   setInterval(generateRandomDayIncrease, 90000);
   setInterval(generateRandomDayDecrease, 1000000);

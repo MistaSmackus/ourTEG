@@ -22,7 +22,7 @@ export default function BuySell() {
     const [stock, setStock] = useState<Array<Schema["Stock"]["type"]>>([]);
     const [account, setAccount] = useState<Array<Schema["Account"]["type"]>>([]);
     const [transaction, setTransaction] = useState<Array<Schema["Transaction"]["type"]>>([]);
-    const [ownedStock, setOwnedStock] = useState<Array<Schema["Ownedstock"]["type"]>>([]);
+    //const [ownedStock, setOwnedStock] = useState<Array<Schema["Ownedstock"]["type"]>>([]);
 
     const [buyShow, setBuyShow] = useState(false);
     const handleBuyClose = () => setBuyShow(false);
@@ -31,6 +31,9 @@ export default function BuySell() {
     const [sellShow, setSellShow] = useState(false);
     const handleSellClose = () => setSellShow(false);
     const handleSellShow = () => setSellShow(true);
+
+    var owner = "No";
+    var ownShare = "0";
 
     const [stockBuyIndex, setStockBuyIndex] = useState("");
     const [stockBuyAmount, setStockBuyAmount] = useState("");
@@ -57,17 +60,19 @@ export default function BuySell() {
     
         }, []); 
 
-                    
+        console.log(transaction);
+
+    {/*                
         useEffect(() => {
             client.models.Ownedstock.observeQuery().subscribe({
                 next: (data) => setOwnedStock([...data.items]),
             });
     
         }, []); 
-    console.log(transaction);
+    
     console.log(ownedStock);
 
-    {/*function buyStock() {
+    function buyStock() {
         console.log(stock[Number(stockBuyIndex)].name);
         console.log(stockBuyAmount);
         let newDate = new Date();
@@ -207,8 +212,8 @@ export default function BuySell() {
                                 <thead><tr><th>Owns</th><th>Shares</th><th>Buy</th><th>Sell</th></tr></thead>
                                 <tbody>
                                     <tr>
-                                    <td>no</td>
-                                    <td>no</td>
+                                    <td>{owner}</td>
+                                    <td>{ownShare}</td>
                                     <td>
                                         <Button variant="primary" onClick={handleBuyShow}>
                                             Buy {s.name}
@@ -230,8 +235,7 @@ export default function BuySell() {
                 </Card.Body>
             </Card>
 
-            <Modal show={buyShow} onHide={handleBuyClose} backdrop="static" keyboard={false} aria-labelledby="contained-modal-title-vcenter" centered
-                className='shadow-lg'>
+            <Modal show={buyShow} onHide={handleBuyClose} backdrop="static" keyboard={false} aria-labelledby="contained-modal-title-vcenter" centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Buy Stock</Modal.Title>
                 </Modal.Header>
@@ -251,7 +255,7 @@ export default function BuySell() {
                         <Form.Control type="text" placeholder="00" autoFocus value={stockBuyAmount} onChange={(e) => setStockBuyAmount(e.target.value)}/>
                     </Form.Group>
                     <br/>
-                    <Modal.Title>That many shares will cost: {(Number(stockBuyAmount)*Number(stock[Number(stockBuyIndex)].price)).toFixed(2).toString()}</Modal.Title>
+                    <Modal.Title>That many shares will cost: {stockBuyAmount ? (Number(stockBuyAmount)*Number(stock[Number(stockBuyIndex)].price)).toFixed(2).toString() : "0.00"}</Modal.Title>
                     <br/>
                     <Modal.Title className='text-muted'>Your account balance is: ${account.length===1 ? account[0].balance : "0.00"}</Modal.Title>
                     <br/>
@@ -262,8 +266,7 @@ export default function BuySell() {
 
             </Modal>
 
-            <Modal show={sellShow} onHide={handleSellClose} backdrop="static" keyboard={false} aria-labelledby="contained-modal-title-vcenter" centered
-                className="shadow-lg">
+            <Modal show={sellShow} onHide={handleSellClose} backdrop="static" keyboard={false} aria-labelledby="contained-modal-title-vcenter" centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Sell Stock</Modal.Title>
                 </Modal.Header>
