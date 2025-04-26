@@ -20,7 +20,7 @@ const features: { title: string; desc: string }[] = [
 
 export default function Home(): JSX.Element {
   const [stock, setStock] = useState<Array<Schema["Stock"]["type"]>>([]);
-  const [marketval, setMarketVal] = useState<Array<Schema["Marketvalue"]["type"]>>([]);
+  const [marketval, setMarketVal] = useState<Array<{ time: string; value: number }>>([]);
 
   useEffect(() => {
     const stockSubscription = client.models.Stock.observeQuery().subscribe({
@@ -31,7 +31,13 @@ export default function Home(): JSX.Element {
 
   useEffect(() => {
     const marketSubscription = client.models.Marketvalue.observeQuery().subscribe({
-      next: (data) => setMarketVal([...data.items]),
+      next: (data) => {
+        const transformed = data.items.map((item) => ({
+          time: item.time,
+          value: Number(item.value),
+        }));
+        setMarketVal(transformed);
+      },
     });
     return () => marketSubscription.unsubscribe();
   }, []);
@@ -61,9 +67,9 @@ export default function Home(): JSX.Element {
 
       client.models.Stock.update({
         id: selectedStock.id,
-        price: newPrice.toFixed(2).toString(),
+        price: newPrice.toFixed(2),
         change: `+${change.toFixed(2)}`,
-        last: oldPrice.toFixed(2).toString(),
+        last: oldPrice.toFixed(2),
         mentions: mentions.toString(),
       });
     }
@@ -78,9 +84,9 @@ export default function Home(): JSX.Element {
 
       client.models.Stock.update({
         id: selectedStock.id,
-        price: newPrice.toFixed(2).toString(),
+        price: newPrice.toFixed(2),
         change: `-${change.toFixed(2)}`,
-        last: oldPrice.toFixed(2).toString(),
+        last: oldPrice.toFixed(2),
         mentions: mentions.toString(),
       });
     }
@@ -98,9 +104,9 @@ export default function Home(): JSX.Element {
 
     client.models.Stock.update({
       id: selectedStock.id,
-      price: newPrice.toFixed(2).toString(),
+      price: newPrice.toFixed(2),
       change: `+${change.toFixed(2)}`,
-      last: oldPrice.toFixed(2).toString(),
+      last: oldPrice.toFixed(2),
       mentions: mentions.toString(),
     });
   }
@@ -120,9 +126,9 @@ export default function Home(): JSX.Element {
 
     client.models.Stock.update({
       id: selectedStock.id,
-      price: newPrice.toFixed(2).toString(),
+      price: newPrice.toFixed(2),
       change: `-${change.toFixed(2)}`,
-      last: oldPrice.toFixed(2).toString(),
+      last: oldPrice.toFixed(2),
       mentions: mentions.toString(),
     });
   }
@@ -134,7 +140,7 @@ export default function Home(): JSX.Element {
           {stock.map((s) => (
             <span key={s.id} className="mx-3">
               {s.symbol}: ${s.price} {" "}
-              <span className={s.change?.toString().includes("-") ? "text-danger" : "text-success"}>
+              <span className={s.change?.includes("-") ? "text-danger" : "text-success"}>
                 ({s.change})
               </span>
             </span>
@@ -153,7 +159,7 @@ export default function Home(): JSX.Element {
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={marketval}>
               <XAxis dataKey="time" stroke="#888" />
-              <YAxis domain={[100, 1000]} stroke="#888" />
+              <YAxis stroke="#888" />
               <Tooltip />
               <Line type="monotone" dataKey="value" stroke="#007bff" strokeWidth={2} />
             </LineChart>
