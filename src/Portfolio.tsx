@@ -72,7 +72,7 @@ export default function Portfolio() {
               <h4>Account Information</h4>
               {currentAccount ? (
                 <ul className="list-unstyled">
-                  <li><strong>Username:</strong> {user?.username}</li>
+                  <li><strong>Username:</strong> {user?.signInDetails?.loginId || user?.username}</li>
                   <li><strong>Account Balance:</strong> ${Number(currentAccount.balance).toFixed(2)}</li>
                   <li><strong>Account Value (Investments):</strong> ${portfolioTotalValue.toFixed(2)}</li>
                   <li><strong>Total Net Worth:</strong> ${(Number(currentAccount.balance) + portfolioTotalValue).toFixed(2)}</li>
