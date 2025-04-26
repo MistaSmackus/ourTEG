@@ -62,9 +62,9 @@ export default function Portfolio() {
               {currentAccount ? (
                 <ul className="list-unstyled">
                   <li><strong>Username:</strong> {user?.username}</li>
-                  <li><strong>Account Balance:</strong> ${Number(currentAccount.accountBalance).toFixed(2)}</li>
+                  <li><strong>Account Balance:</strong> ${Number(currentAccount.balance).toFixed(2)}</li>
                   <li><strong>Account Value (Investments):</strong> ${portfolioTotalValue.toFixed(2)}</li>
-                  <li><strong>Total Net Worth:</strong> ${(Number(currentAccount.accountBalance) + portfolioTotalValue).toFixed(2)}</li>
+                  <li><strong>Total Net Worth:</strong> ${(Number(currentAccount.balance) + portfolioTotalValue).toFixed(2)}</li>
                 </ul>
               ) : (
                 <p className="text-muted">Loading account info...</p>
