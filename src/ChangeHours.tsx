@@ -8,8 +8,9 @@ import { generateClient } from "aws-amplify/data";
 const client = generateClient<Schema>();
 
 export default function ChangeHours() {
-  const [market, setMarket] = useState<Array<Schema["Markethours"]["type"]>>([]);
-  const [days, setDays] = useState<Array<Schema["Marketdays"]["type"]>>([]);
+
+  //const [market, setMarket] = useState<Array<Schema["Markethours"]["type"]>>([]);
+  //const [days, setDays] = useState<Array<Schema["Marketdays"]["type"]>>([]);//
   const [open, setOpen] = useState(new Date());
   const [close, setClose] = useState(new Date());
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
