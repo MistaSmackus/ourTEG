@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import { Container, Table, Card } from "react-bootstrap";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "../amplify/data/resource";
@@ -11,6 +12,7 @@ export default function Portfolio() {
   const { user } = useAuthenticator();
   const [account, setAccount] = useState<Array<Schema["Account"]["type"]>>([]);
   const [ownedStock, setOwnedStock] = useState<Array<Schema["Ownedstock"]["type"]>>([]);
+  const [portfolioHistory, setPortfolioHistory] = useState<Array<{ time: string; value: number }>>([]);
 
   useEffect(() => {
     const sub1 = client.models.Account.observeQuery().subscribe({
@@ -21,9 +23,22 @@ export default function Portfolio() {
       next: (data) => setOwnedStock([...data.items]),
     });
 
+    const sub3 = client.models.Marketvalue.observeQuery().subscribe({
+      next: (data) => {
+        const transformed = data.items
+          .filter((item) => item.time != null && item.value != null)
+          .map((item) => ({
+            time: item.time!,
+            value: parseFloat(item.value!),
+          }));
+        setPortfolioHistory(transformed);
+      },
+    });
+
     return () => {
       sub1.unsubscribe();
       sub2.unsubscribe();
+      sub3.unsubscribe();
     };
   }, []);
 
@@ -43,6 +58,19 @@ export default function Portfolio() {
         <p><strong>Account Balance:</strong> ${account.length > 0 ? Number(account[0].balance ?? 0).toFixed(2) : "0.00"}</p>
         <p><strong>Account Value (Investments):</strong> ${portfolioTotalValue.toFixed(2)}</p>
         <p><strong>Total Net Worth:</strong> ${(portfolioTotalValue + Number(account[0]?.balance ?? 0)).toFixed(2)}</p>
+      </Card>
+
+      {/* Portfolio History Chart */}
+      <Card className="bg-dark text-light mb-4 p-4">
+        <h4>Portfolio History</h4>
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={portfolioHistory}>
+            <XAxis dataKey="time" stroke="#888" />
+            <YAxis stroke="#888" />
+            <Tooltip />
+            <Line type="monotone" dataKey="value" stroke="#00bcd4" strokeWidth={2} />
+          </LineChart>
+        </ResponsiveContainer>
       </Card>
 
       {/* Owned Stocks Table */}
