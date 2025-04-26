@@ -1,141 +1,108 @@
-import Container from "react-bootstrap/Container";
-import Table from "react-bootstrap/Table";
-import Card from "react-bootstrap/Card";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
 import { useEffect, useState } from "react";
+import { Container, Row, Col, Table, Button, Card } from "react-bootstrap";
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 
 const client = generateClient<Schema>();
 
-export default function MarketOverview(): JSX.Element {
-  const [stock, setStock] = useState<Array<Schema["Stock"]["type"]>>([]);
+export default function MarketOverview() {
+  const [stocks, setStocks] = useState<Schema["Stock"]["type"][]>([]);
 
   useEffect(() => {
-    const stockSubscription = client.models.Stock.observeQuery().subscribe({
-      next: (data) => setStock([...data.items]),
+    const sub = client.models.Stock.observeQuery().subscribe({
+      next: (data) => setStocks([...data.items]),
     });
-    return () => stockSubscription.unsubscribe();
+    return () => sub.unsubscribe();
   }, []);
 
-  const trending = [...stock]
-    .filter((s) => s.mentions != null)
+  const movers = [...stocks]
+    .filter((s) => s.change)
+    .sort((a, b) => Math.abs(Number(b.change)) - Math.abs(Number(a.change)))
+    .slice(0, 3);
+
+  const trending = [...stocks]
+    .filter((s) => s.mentions !== null)
     .sort((a, b) => Number(b.mentions) - Number(a.mentions))
-    .slice(0, 5);
-
-  const gainers = [...stock]
-    .filter((s) => s.change && !s.change.toString().includes("-"))
-    .sort((a, b) => Number(b.change) - Number(a.change))
-    .reverse()
-    .slice(0, 5);
-
-  const losers = [...stock]
-    .filter((s) => s.change && s.change.toString().includes("-"))
-    .sort((a, b) => Number(a.change) - Number(b.change))
-    .slice(0, 5);
+    .slice(0, 3);
 
   return (
-    <Container fluid className="min-vh-100 d-flex flex-column align-items-center py-5">
-      {/* Hero Section */}
-      <div className="text-center mb-4">
-        <h1 className="fw-bold">Market Overview</h1>
-        <p className="text-muted">Track the latest market changes and top performers.</p>
+    <Container className="py-5 text-light">
+      <h2 className="text-center mb-4">Market Overview</h2>
+      <div className="d-flex justify-content-center gap-2 mb-4">
+        <Button variant="primary">Toggle Market Indices</Button>
+        <Button variant="primary">Toggle Market Movers</Button>
+        <Button variant="primary">Toggle Trending Stocks</Button>
+        <Button variant="primary">Toggle Economic Events</Button>
       </div>
 
-      {/* Indices Snapshot */}
-      <Card className="w-100 shadow-sm mb-4" style={{ maxWidth: "900px" }}>
-        <Card.Body>
-          <h2 className="h5 mb-3">Indices</h2>
-          <Table striped bordered hover responsive>
-            <thead>
-              <tr>
-                <th>Symbol</th>
-                <th>Price</th>
-                <th>Change</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stock.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.symbol}</td>
-                  <td>${s.price}</td>
-                  <td style={{ color: s.change?.toString().includes("-") ? "red" : "green" }}>{s.change}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </Card.Body>
-      </Card>
+      <Row className="g-4">
+        <Col md={4}>
+          <Card className="bg-dark text-light">
+            <Card.Header className="text-center fw-bold">Market Movers</Card.Header>
+            <Card.Body>
+              <Table variant="dark" responsive>
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Price</th>
+                    <th>Change</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {movers.map((s) => (
+                    <tr key={s.id}>
+                      <td>{s.symbol}</td>
+                      <td>${s.price}</td>
+                      <td className={s.change?.includes("-") ? "text-danger" : "text-success"}>{s.change}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </Card.Body>
+          </Card>
+        </Col>
 
-      {/* Biggest Gainers */}
-      <Card className="w-100 shadow-sm mb-4" style={{ maxWidth: "900px" }}>
-        <Card.Body>
-          <h2 className="h5 mb-3">Biggest Gainers</h2>
-          <Table striped bordered hover responsive>
-            <thead>
-              <tr>
-                <th>Symbol</th>
-                <th>Price</th>
-                <th>Change</th>
-              </tr>
-            </thead>
-            <tbody>
-              {gainers.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.symbol}</td>
-                  <td>${s.price}</td>
-                  <td style={{ color: "green" }}>{s.change}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </Card.Body>
-      </Card>
+        <Col md={4}>
+          <Card className="bg-dark text-light">
+            <Card.Header className="text-center fw-bold">Trending Stocks</Card.Header>
+            <Card.Body>
+              <Table variant="dark" responsive>
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Price</th>
+                    <th>Mentions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trending.map((s) => (
+                    <tr key={s.id}>
+                      <td>{s.symbol}</td>
+                      <td>${s.price}</td>
+                      <td>{s.mentions}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </Card.Body>
+          </Card>
+        </Col>
 
-      {/* Biggest Losers */}
-      <Card className="w-100 shadow-sm mb-4" style={{ maxWidth: "900px" }}>
-        <Card.Body>
-          <h2 className="h5 mb-3">Biggest Losers</h2>
-          <Table striped bordered hover responsive>
-            <thead>
-              <tr>
-                <th>Symbol</th>
-                <th>Price</th>
-                <th>Change</th>
-              </tr>
-            </thead>
-            <tbody>
-              {losers.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.symbol}</td>
-                  <td>${s.price}</td>
-                  <td style={{ color: "red" }}>{s.change}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </Card.Body>
-      </Card>
-
-      {/* Trending Stocks */}
-      <Card className="w-100 shadow-sm mb-4" style={{ maxWidth: "900px" }}>
-        <Card.Body>
-          <h2 className="h5 mb-3">Trending Stocks</h2>
-          <Row className="g-3">
-            {trending.map((trend) => (
-              <Col key={trend.id} md={4}>
-                <Card className="p-3 text-center shadow-sm">
-                  <Card.Body>
-                    <h5>{trend.symbol}</h5>
-                    <p className="text-muted">Mentions: {trend.mentions}</p>
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        </Card.Body>
-      </Card>
+        <Col md={4}>
+          <Card className="bg-dark text-light">
+            <Card.Header className="text-center fw-bold">Global Markets</Card.Header>
+            <Card.Body>
+              <Table variant="dark" responsive>
+                <tbody>
+                  <tr><td>Nikkei 225</td><td>32,100.50</td><td className="text-success">+1.50%</td></tr>
+                  <tr><td>DAX (Germany)</td><td>15,780.20</td><td className="text-danger">-0.80%</td></tr>
+                  <tr><td>Crude Oil</td><td>$85.12</td><td className="text-success">+2.30%</td></tr>
+                </tbody>
+              </Table>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
     </Container>
   );
 }

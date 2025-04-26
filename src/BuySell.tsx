@@ -8,7 +8,6 @@ import { generateClient } from "aws-amplify/data";
 const client = generateClient<Schema>();
 
 export default function BuySell() {
-  const { user } = useAuthenticator();
   const [stock, setStock] = useState<Schema["Stock"]["type"][]>([]);
   const [account, setAccount] = useState<Schema["Account"]["type"][]>([]);
   const [ownedStock, setOwnedStock] = useState<Schema["Ownedstock"]["type"][]>([]);
