@@ -16,7 +16,7 @@ import {
   PointElement,
   Tooltip,
   Legend,
-  Title,
+  Title
 } from "chart.js";
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend, Title);
@@ -30,8 +30,8 @@ export default function Portfolio() {
 
   const [portfolioHistory, setPortfolioHistory] = useState<number[]>([]);
   const [totalPortfolioValue, setTotalPortfolioValue] = useState("$0.00");
+  const [accountBalance, setAccountBalance] = useState("$0.00");
   const [purchasedStocks, setPurchasedStocks] = useState<any[]>([]);
-
   const [stockName, setStockName] = useState("");
   const [shares, setShares] = useState("0");
   const [currentPrice, setCurrentPrice] = useState("0");
@@ -49,6 +49,9 @@ export default function Portfolio() {
         const value = account?.accountvalue ?? "0";
         setTotalPortfolioValue("$" + value);
 
+        const balance = account?.balance ?? "0";
+        setAccountBalance("$" + balance);
+
         const historyRes = await client.models.Marketvalue.list();
         const sorted = historyRes.data
           ?.filter(entry => entry.time)
@@ -58,6 +61,7 @@ export default function Portfolio() {
 
         const ownedRes = await client.models.Ownedstock.list();
         setPurchasedStocks(ownedRes.data || []);
+
       } catch (err) {
         console.error("Error fetching data:", err);
       }
@@ -121,9 +125,9 @@ export default function Portfolio() {
         backgroundColor: "rgba(75,192,192,0.2)",
         tension: 0.4,
         pointRadius: 5,
-        pointBackgroundColor: "rgba(75,192,192,1)",
-      },
-    ],
+        pointBackgroundColor: "rgba(75,192,192,1)"
+      }
+    ]
   };
 
   return (
@@ -134,6 +138,9 @@ export default function Portfolio() {
           <h4>
             Total Value: <span className="text-success">{totalPortfolioValue}</span>
           </h4>
+          <h5>
+            Available Cash: <span className="text-info">{accountBalance}</span>
+          </h5>
         </div>
       </Card>
 
@@ -178,9 +185,7 @@ export default function Portfolio() {
           <Form.Label>Current Price</Form.Label>
           <Form.Control type="number" value={currentPrice} onChange={(e) => setCurrentPrice(e.target.value)} />
         </Form.Group>
-        <Button variant="primary" type="submit">
-          Add Stock
-        </Button>
+        <Button variant="primary" type="submit">Add Stock</Button>
       </Form>
     </Container>
   );
