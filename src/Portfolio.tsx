@@ -38,14 +38,14 @@ export default function Portfolio() {
 
     const sub2 = client.models.Transaction.observeQuery().subscribe({
       next: (data) => {
-        const userTx = data.items.filter((t) => t.user === user?.username);
+        const userTx = data.items.filter((t) => t.owner === user?.username);
         setTransactions(userTx);
       },
     });
 
     const sub3 = client.models.Account.observeQuery().subscribe({
       next: (data) => {
-        const found = data.items.find((acc) => acc.user === user?.username);
+        const found = data.items.find((acc) => acc.owner === user?.username);
         setAccount(found || null);
       },
     });
