@@ -34,7 +34,7 @@ export default function App() {
               <NavLink to="/buysell" className="nav-link">Buy Sell</NavLink>
             </Nav.Item>
             <Nav.Item>
-              <NavLink to="/userTransaction" className="nav-link">Transactions</NavLink>
+              <NavLink to="/userTransaction" className="nav-link">Move Money</NavLink>
             </Nav.Item>
             <Nav.Item>
               <Dropdown as={Nav.Item} id="adminMenu">
