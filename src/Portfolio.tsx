@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuthenticator } from "@aws-amplify/ui-react";
-import { Container, Table, Card } from "react-bootstrap";
+import { Container, Row, Col, Table, Card } from "react-bootstrap";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { generateClient } from "aws-amplify/data";
@@ -47,63 +47,84 @@ export default function Portfolio() {
     return acc + stockTotal;
   }, 0);
 
+  const currentAccount = account.length > 0 ? account[0] : null;
+
   return (
- <Container fluid className="py-5">
-    <h2 className="text-center text-light mb-4">Your Portfolio Overview</h2>
+    <Container className="py-5">
+      <h2 className="text-center text-light mb-4">Your Portfolio Overview</h2>
 
-    {/* Wrap everything in ONE max-width container */}
-    <Container style={{ maxWidth: "900px" }} className="mx-auto">
+      <Container style={{ maxWidth: "900px" }} className="mx-auto">
 
-      {/* Account Info */}
-      <Card className="bg-dark text-light mb-4 p-4">
-        <h4 className="text-center">Account Information</h4>
-        <p><strong>Username:</strong> {user?.signInDetails?.loginId?.split("@")[0]}</p>
-        <p><strong>Account Balance:</strong> ${account.length > 0 ? Number(account[0].balance ?? 0).toFixed(2) : "0.00"}</p>
-        <p><strong>Account Value (Investments):</strong> ${portfolioTotalValue.toFixed(2)}</p>
-        <p><strong>Total Net Worth:</strong> ${(portfolioTotalValue + Number(account[0]?.balance ?? 0)).toFixed(2)}</p>
-      </Card>
+        <Row className="justify-content-center mb-4">
+          <Col md={8}>
+            <Card className="bg-dark text-light p-4 shadow">
+              <h4>Account Information</h4>
+              {currentAccount ? (
+                <ul className="list-unstyled">
+                  <li><strong>Username:</strong> {user?.username}</li>
+                  <li><strong>Account Balance:</strong> ${Number(currentAccount.accountBalance).toFixed(2)}</li>
+                  <li><strong>Account Value (Investments):</strong> ${portfolioTotalValue.toFixed(2)}</li>
+                  <li><strong>Total Net Worth:</strong> ${(Number(currentAccount.accountBalance) + portfolioTotalValue).toFixed(2)}</li>
+                </ul>
+              ) : (
+                <p className="text-muted">Loading account info...</p>
+              )}
+            </Card>
+          </Col>
+        </Row>
 
-      {/* Portfolio Chart */}
-      <Card className="bg-dark text-light mb-4 p-4">
-        <h4>Portfolio History</h4>
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={portfolioHistory}>
-            <XAxis dataKey="time" stroke="#888" />
-            <YAxis stroke="#888" />
-            <Tooltip />
-            <Line type="monotone" dataKey="value" stroke="#00bcd4" strokeWidth={2} />
-          </LineChart>
-        </ResponsiveContainer>
-      </Card>
+        <Row className="justify-content-center mb-4">
+          <Col md={10}>
+            <Card className="bg-dark text-light p-4 shadow">
+              <h4>Portfolio History</h4>
+              {portfolioHistory.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={portfolioHistory}>
+                    <XAxis dataKey="time" stroke="#aaa" />
+                    <YAxis stroke="#aaa" />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="value" stroke="#0dcaf0" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-muted">No portfolio history data yet.</p>
+              )}
+            </Card>
+          </Col>
+        </Row>
 
-      {/* Owned Stocks Table */}
-      <Card className="bg-secondary text-light p-4">
-        <h4>Owned Stocks</h4>
-        {ownedStock.length > 0 ? (
-          <Table striped bordered hover responsive variant="dark">
-            <thead>
-              <tr>
-                <th>Stock Name</th>
-                <th>Shares Owned</th>
-                <th>Current Price</th>
-                <th>Total Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ownedStock.map((stock) => (
-                <tr key={stock.id}>
-                  <td>{stock.stockName}</td>
-                  <td>{stock.shares}</td>
-                  <td>${Number(stock.currentPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  <td>${(Number(stock.currentPrice) * Number(stock.shares)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        ) : (
-          <p className="text-muted">You don't own any stocks yet.</p>
-        )}
-      </Card>
+        <Row className="justify-content-center">
+          <Col md={10}>
+            <Card className="bg-secondary text-light p-4 shadow">
+              <h4>Owned Stocks</h4>
+              {ownedStock.length > 0 ? (
+                <Table striped bordered hover responsive variant="dark" className="mt-3">
+                  <thead>
+                    <tr>
+                      <th>Stock Name</th>
+                      <th>Shares Owned</th>
+                      <th>Current Price</th>
+                      <th>Total Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ownedStock.map((stock) => (
+                      <tr key={stock.id}>
+                        <td>{stock.stockName}</td>
+                        <td>{stock.shares}</td>
+                        <td>${Number(stock.currentPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>${(Number(stock.currentPrice) * Number(stock.shares)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              ) : (
+                <p className="text-muted">You don't own any stocks yet.</p>
+              )}
+            </Card>
+          </Col>
+        </Row>
+
       </Container>
     </Container>
   );
