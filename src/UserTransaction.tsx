@@ -1,3 +1,4 @@
+
 import Form from 'react-bootstrap/Form';
 import Container from "react-bootstrap/Container";
 import Button from 'react-bootstrap/Button';
@@ -10,166 +11,168 @@ import { generateClient } from "aws-amplify/data";
 const client = generateClient<Schema>();
 
 export default function UserTransaction() {
-    const [transaction, setTransaction] = useState<Array<Schema["Transaction"]["type"]>>([]);
-    const [account, setAccount] = useState<Array<Schema["Account"]["type"]>>([]);
-    const [depo, setDepo] = useState("");
-    const [withdraw, setWithdraw] = useState("");
-    
-    let oldBal;
-    
-    useEffect(() => {
-        client.models.Transaction.observeQuery().subscribe({
-          next: (data) => setTransaction([...data.items]),
-        });
+  const [transaction, setTransaction] = useState<Array<Schema["Transaction"]["type"]>>([]);
+  const [account, setAccount] = useState<Array<Schema["Account"]["type"]>>([]);
+  const [depo, setDepo] = useState<string>("");
+  const [withdraw, setWithdraw] = useState<string>("");
 
-    }, []);   
+  useEffect(() => {
+    const transactionSub = client.models.Transaction.observeQuery().subscribe({
+      next: (data) => setTransaction([...data.items]),
+    });
+    return () => transactionSub.unsubscribe();
+  }, []);
 
-        
-    useEffect(() => {
-        client.models.Account.observeQuery().subscribe({
-          next: (data) => setAccount([...data.items]),
-        });
+  useEffect(() => {
+    const accountSub = client.models.Account.observeQuery().subscribe({
+      next: (data) => setAccount([...data.items]),
+    });
+    return () => accountSub.unsubscribe();
+  }, []);
 
-    }, []); 
-    
-    function createDeposits() {
-        let newDate = new Date();
-        let date = newDate.getDate();
-        let month = newDate.getMonth() + 1;
-        let year = newDate.getFullYear();
+  async function createDeposits(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
 
-        console.log("depo amount: " + depo);
-        console.log("old balance: "+ account[0]?.balance);
-
-        if(account.length === 0) {
-            client.models.Transaction.create({
-                type: "deposit",
-                amount: Number(depo).toFixed(2).toString(), 
-                date: `${year}-${month}-${date}`,      
-                success: true,
-            });
-
-            client.models.Account.create({
-                balance: Number(depo).toFixed(2).toString(),
-            });
-
-                
-        } else {
-
-            oldBal = Number(account[0].balance);
-            oldBal = oldBal + Number(depo);
-            client.models.Transaction.create({
-                type: "deposit",
-                amount: Number(depo).toFixed(2).toString(), 
-                date: `${year}-${month}-${date}`,
-                success: true,
-            });
-
-            client.models.Account.update({
-                id: account[0].id,
-                balance: oldBal.toFixed(2).toString(),
-            });
-            oldBal = "";
-        }    
+    if (!depo || isNaN(Number(depo))) {
+      alert("Please enter a valid deposit amount.");
+      return;
     }
 
-    function createWithdraw() {
-        let newDate = new Date();
-        let date = newDate.getDate();
-        let month = newDate.getMonth() + 1;
-        let year = newDate.getFullYear();
-        oldBal = Number(account[0].balance);
+    const depositAmount = Number(depo);
+    const today = new Date().toISOString().split("T")[0];
 
-        console.log("withdraw amount: " + withdraw);
-        console.log("old balance: "+ oldBal);
-        
-        if(account.length === 0) {
-            client.models.Transaction.create({
-                type: "withdraw",
-                amount: Number(withdraw).toFixed(2).toString(), 
-                date: `${year}-${month}-${date}`,
-                success: false,
-            });
-            oldBal = "";
-            window.alert("Unable to withdraw. Balance too low for that amount.");    
-            
-        } else {
-            if(oldBal < Number(withdraw)) {
-                client.models.Transaction.create({
-                    type: "withdraw",
-                    amount: Number(withdraw).toFixed(2).toString(), 
-                    date: `${year}-${month}-${date}`,
-                    success: false,
-                });
-                oldBal = "";
-                window.alert("Unable to withdraw. Balance too low for that amount.");
-            }
-            else {
-                oldBal = oldBal - Number(withdraw);
-                client.models.Transaction.create({
-                    type: "withdraw",
-                    amount: Number(withdraw).toFixed(2).toString(), 
-                    date: `${year}-${month}-${date}`,
-                    success: true,
-                });
+    try {
+      if (account.length === 0) {
+        await client.models.Transaction.create({
+          type: "deposit",
+          amount: depositAmount.toFixed(2).toString(),
+          date: today,
+          success: true,
+        });
 
-                client.models.Account.update({
-                    id: account[0].id,
-                    balance: oldBal.toFixed(2).toString(),
-                });
-                oldBal = "";
-            }
-                    
-        }
+        await client.models.Account.create({
+          balance: depositAmount.toFixed(2).toString(),
+        });
+      } else {
+        const oldBal = Number(account[0].balance);
+        const newBalance = oldBal + depositAmount;
+
+        await client.models.Transaction.create({
+          type: "deposit",
+          amount: depositAmount.toFixed(2).toString(),
+          date: today,
+          success: true,
+        });
+
+        await client.models.Account.update({
+          id: account[0].id,
+          balance: newBalance.toFixed(2).toString(),
+        });
+      }
+
+      setDepo("");
+    } catch (err) {
+      console.error("Failed to deposit:", err);
     }
-
-
-    return (
-        <Container fluid className="min-vh-100 d-flex flex-column align-items-center py-5">
-            <div className="text-center mb-8">
-                <h1>Ready to make a transaction?</h1>
-                <h2 className="text-muted">Account Balance: ${account.length===1 ? account[0].balance : "0"}</h2>
-                <br/><br/>
-
-
-                <h2>Add Funds</h2>
-                <Form onSubmit={createDeposits}>
-                    <Form.Group className="mb-3" controlId="depositForm.ControlInput1">
-                        <Form.Label className="text-muted">Deposit Amount:</Form.Label>
-                        <Form.Control size="lg" type="text" placeholder="00.00" value={depo} onChange={(e) => setDepo(e.target.value)}/>
-                    </Form.Group>
-                    <Button variant="outline-primary" id="depositSubmit" as="input" type="submit"/>
-                </Form>
-                <br/><br/>
-
-                <h2>Withdraw Funds</h2>
-                <Form onSubmit={createWithdraw}>
-                    <Form.Group className="mb-3" controlId="withdrawForm.ControlInput1">
-                        <Form.Label className="text-muted">Withdraw Amount:</Form.Label>
-                        <Form.Control size="lg" type="text" placeholder="00.00" value={withdraw} onChange={(e) => setWithdraw(e.target.value)}/>
-                    </Form.Group>
-                    <Button variant="outline-primary" id="withdrawSubmit" as="input" type="submit"/>
-                </Form>
-                <br/><br/>
-            </div>
-
-            
-            <h1>Transaction History</h1>
-            <Accordion>
-                {transaction.map((trans) => (
-                    <Accordion.Item eventKey={trans.id}>
-                        <Accordion.Header>
-                            <Col>{trans.date}</Col> 
-                            <Col>{trans.type}</Col>
-                        </Accordion.Header>
-                        <Accordion.Body>
-                        <Col>Amount: {trans.amount}</Col> 
-                        <Col>{trans.stock}</Col>
-                        <Col>Transaction: {trans.success ? "Success" : "Failure"}</Col>
-                        </Accordion.Body>
-                    </Accordion.Item>
-                ))}
-            </Accordion>
-        </Container>
-    );
   }
+
+  async function createWithdraw(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    if (!withdraw || isNaN(Number(withdraw))) {
+      alert("Please enter a valid withdraw amount.");
+      return;
+    }
+
+    const withdrawAmount = Number(withdraw);
+    const today = new Date().toISOString().split("T")[0];
+
+    if (account.length === 0 || Number(account[0].balance) < withdrawAmount) {
+      await client.models.Transaction.create({
+        type: "withdraw",
+        amount: withdrawAmount.toFixed(2).toString(),
+        date: today,
+        success: false,
+      });
+      alert("Unable to withdraw. Balance too low for that amount.");
+    } else {
+      const oldBal = Number(account[0].balance);
+      const newBalance = oldBal - withdrawAmount;
+
+      await client.models.Transaction.create({
+        type: "withdraw",
+        amount: withdrawAmount.toFixed(2).toString(),
+        date: today,
+        success: true,
+      });
+
+      await client.models.Account.update({
+        id: account[0].id,
+        balance: newBalance.toFixed(2).toString(),
+      });
+    }
+
+    setWithdraw("");
+  }
+
+  return (
+    <Container fluid className="min-vh-100 d-flex flex-column align-items-center py-5">
+      <div className="text-center mb-8">
+        <h1>Ready to make a transaction?</h1>
+        <h2 className="text-muted">Account Balance: ${account.length === 1 ? account[0].balance : "0.00"}</h2>
+        <br /><br />
+
+        <h2>Add Funds</h2>
+        <Form onSubmit={createDeposits}>
+          <Form.Group className="mb-3" controlId="depositForm.ControlInput1">
+            <Form.Label className="text-muted">Deposit Amount:</Form.Label>
+            <Form.Control
+              size="lg"
+              type="text"
+              placeholder="00.00"
+              value={depo}
+              onChange={(e) => setDepo(e.target.value)}
+            />
+          </Form.Group>
+          <Button variant="outline-primary" type="submit">Deposit</Button>
+        </Form>
+
+        <br /><br />
+
+        <h2>Withdraw Funds</h2>
+        <Form onSubmit={createWithdraw}>
+          <Form.Group className="mb-3" controlId="withdrawForm.ControlInput1">
+            <Form.Label className="text-muted">Withdraw Amount:</Form.Label>
+            <Form.Control
+              size="lg"
+              type="text"
+              placeholder="00.00"
+              value={withdraw}
+              onChange={(e) => setWithdraw(e.target.value)}
+            />
+          </Form.Group>
+          <Button variant="outline-danger" type="submit">Withdraw</Button>
+        </Form>
+
+        <br /><br />
+      </div>
+
+      <h1>Transaction History</h1>
+      <Accordion>
+        {transaction.map((trans) => (
+          <Accordion.Item eventKey={trans.id} key={trans.id}>
+            <Accordion.Header>
+              <Col>{trans.date}</Col>
+              <Col>{trans.type}</Col>
+            </Accordion.Header>
+            <Accordion.Body>
+              <Col>Amount: ${trans.amount}</Col>
+              <Col>{trans.stock ? `Stock: ${trans.stock}` : ""}</Col>
+              <Col>Transaction: {trans.success ? "Success" : "Failure"}</Col>
+            </Accordion.Body>
+          </Accordion.Item>
+        ))}
+      </Accordion>
+    </Container>
+  );
+}

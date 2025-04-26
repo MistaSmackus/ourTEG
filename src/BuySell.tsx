@@ -1,66 +1,182 @@
-function buyStock() {
-  const selectedStock = stock[stockBuyIndex];
-  const sharesToBuy = stockBuyAmount;
-  const totalCost = Number((sharesToBuy * Number(selectedStock.price)).toFixed(2));
+import { useAuthenticator } from '@aws-amplify/ui-react';
+import { Container, Card, Accordion, Button, Modal, Form, Table, Col } from "react-bootstrap";
+import "bootstrap/dist/css/bootstrap.min.css";
+import { useEffect, useState } from "react";
+import type { Schema } from "../amplify/data/resource";
+import { generateClient } from "aws-amplify/data";
 
-  if (account.length === 0) {
-    window.alert("You have no money. Deposit funds to buy stocks.");
-    handleBuyClose();
-    return;
+const client = generateClient<Schema>();
+
+export default function BuySell() {
+  const { user } = useAuthenticator();
+  const [stock, setStock] = useState<Array<Schema["Stock"]["type"]>>([]);
+  const [account, setAccount] = useState<Array<Schema["Account"]["type"]>>([]);
+  const [transaction, setTransaction] = useState<Array<Schema["Transaction"]["type"]>>([]);
+  const [ownedStock, setOwnedStock] = useState<Array<Schema["Ownedstock"]["type"]>>([]);
+
+  const [buyShow, setBuyShow] = useState(false);
+  const handleBuyClose = () => setBuyShow(false);
+  const handleBuyShow = () => setBuyShow(true);
+
+  const [stockBuyIndex, setStockBuyIndex] = useState<number>(0);
+  const [stockBuyAmount, setStockBuyAmount] = useState<number>(0);
+
+  useEffect(() => {
+    client.models.Stock.observeQuery().subscribe({ next: (data) => setStock([...data.items]) });
+    client.models.Account.observeQuery().subscribe({ next: (data) => setAccount([...data.items]) });
+    client.models.Transaction.observeQuery().subscribe({ next: (data) => setTransaction([...data.items]) });
+    client.models.Ownedstock.observeQuery().subscribe({ next: (data) => setOwnedStock([...data.items]) });
+  }, []);
+
+  async function buyStock() {
+    const selectedStock = stock[stockBuyIndex];
+    const sharesToBuy = stockBuyAmount;
+
+    if (sharesToBuy <= 0 || isNaN(sharesToBuy)) {
+      window.alert("Invalid number of shares.");
+      handleBuyClose();
+      return;
+    }
+
+    const totalCost = Number((sharesToBuy * Number(selectedStock.price)).toFixed(2));
+
+    if (account.length === 0) {
+      window.alert("You have no money. Deposit funds to buy stocks.");
+      handleBuyClose();
+      return;
+    }
+
+    const oldBalance = Number(account[0].balance);
+
+    if (oldBalance < totalCost) {
+      window.alert(`Not enough balance to buy ${selectedStock.name}. Needed: $${totalCost}`);
+      handleBuyClose();
+      return;
+    }
+
+    try {
+      const existingOwned = ownedStock.find((os) => os.stockId === selectedStock.id);
+
+      if (existingOwned) {
+        await client.models.Ownedstock.update({
+          id: existingOwned.id,
+          currentPrice: selectedStock.price,
+          stockName: selectedStock.name,
+          owns: true,
+          stockId: selectedStock.id,
+          shares: (Number(existingOwned.shares) + sharesToBuy).toFixed(2).toString(),
+        });
+      } else {
+        await client.models.Ownedstock.create({
+          currentPrice: selectedStock.price,
+          stockName: selectedStock.name,
+          owns: true,
+          stockId: selectedStock.id,
+          shares: sharesToBuy.toFixed(2).toString(),
+        });
+      }
+
+      await client.models.Transaction.create({
+        type: "buystock",
+        amount: totalCost.toString(),
+        date: new Date().toISOString().split("T")[0],
+        stock: selectedStock.name,
+        owns: true,
+        success: true,
+        stockId: selectedStock.id,
+        shares: sharesToBuy.toFixed(2).toString(),
+      });
+
+      const newBalance = oldBalance - totalCost;
+      const newAccountValue = Number(account[0].accountvalue) + totalCost;
+
+      await client.models.Account.update({
+        id: account[0].id,
+        balance: newBalance.toFixed(2).toString(),
+        accountvalue: newAccountValue.toFixed(2).toString(),
+      });
+
+      handleBuyClose();
+    } catch (err) {
+      console.error("Failed to buy stock:", err);
+      window.alert("Something went wrong. Please try again.");
+    }
   }
 
-  const oldBalance = Number(account[0].balance);
+  return (
+    <Container className="py-4">
+      <h1 className="text-white text-center mb-4">Time to Engage</h1>
+      <Card className="mb-5">
+        <Card.Header><h4>Available Stocks</h4></Card.Header>
+        <Card.Body>
+          <Accordion>
+            {stock.map((s, index) => (
+              <Accordion.Item eventKey={s.id} key={s.id}>
+                <Accordion.Header>
+                  <Col>{s.name}</Col>
+                  <Col>${s.price}</Col>
+                </Accordion.Header>
+                <Accordion.Body>
+                  <Table striped bordered hover responsive>
+                    <thead><tr><th>Company Name</th><th>Symbol</th><th>Price</th><th>Buy</th></tr></thead>
+                    <tbody>
+                      <tr>
+                        <td>{s.name}</td>
+                        <td>{s.symbol}</td>
+                        <td>{s.price}</td>
+                        <td>
+                          <Button variant="primary" onClick={handleBuyShow}>
+                            Buy {s.name}
+                          </Button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </Table>
+                </Accordion.Body>
+              </Accordion.Item>
+            ))}
+          </Accordion>
+        </Card.Body>
+      </Card>
 
-  if (oldBalance < totalCost) {
-    window.alert(`Not enough balance to buy ${selectedStock.name}. Needed: $${totalCost}`);
-    handleBuyClose();
-    return;
-  }
-
-  const existingOwned = ownedStock.find((os) => os.stockId === selectedStock.id);
-
-  if (existingOwned) {
-   
-    client.models.Ownedstock.update({
-      id: existingOwned.id,
-      currentPrice: selectedStock.price,
-      stockName: selectedStock.name,
-      owns: true,
-      stockId: selectedStock.id,
-      shares: (Number(existingOwned.shares) + sharesToBuy).toFixed(2).toString(),
-    });
-  } else {
-    
-    client.models.Ownedstock.create({
-      currentPrice: selectedStock.price,
-      stockName: selectedStock.name,
-      owns: true,
-      stockId: selectedStock.id,
-      shares: sharesToBuy.toFixed(2).toString(),
-    });
-  }
-
-
-  client.models.Transaction.create({
-    type: "buystock",
-    amount: totalCost.toString(),
-    date: new Date().toISOString().split("T")[0],
-    stock: selectedStock.name,
-    owns: true,
-    success: true,
-    stockId: selectedStock.id,
-    shares: sharesToBuy.toFixed(2).toString(),
-  });
-
- 
-  const newBalance = oldBalance - totalCost;
-  const newAccountValue = Number(account[0].accountvalue) + totalCost;
-
-  client.models.Account.update({
-    id: account[0].id,
-    balance: newBalance.toFixed(2).toString(),
-    accountvalue: newAccountValue.toFixed(2).toString(),
-  });
-
-  handleBuyClose();
+      <Modal show={buyShow} onHide={handleBuyClose} backdrop="static" keyboard={false} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Buy Stock</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Select value={stockBuyIndex} onChange={(e) => setStockBuyIndex(Number(e.target.value))}>
+              {stock.map((s, index) => (
+                <option key={index} value={index}>{s.name}</option>
+              ))}
+            </Form.Select>
+            <br />
+            <Form.Group>
+              <Form.Control
+                type="text"
+                placeholder="Number of Shares"
+                value={stockBuyAmount}
+                onChange={(e) => setStockBuyAmount(Number(e.target.value))}
+              />
+            </Form.Group>
+            <br />
+            <Button variant="secondary" onClick={handleBuyClose}>Cancel</Button>
+            <Button variant="primary" onClick={buyStock}>Confirm Purchase</Button>
+          </Form>
+        </Modal.Body>
+      </Modal>
+    </Container>
+  );
 }
+
+
+
+type="text" --> keep type as "text", but cast value to number properly
+
+<Form.Control
+  size="lg"
+  type="text"
+  placeholder="Required, format: 00.00"
+  value={price}
+  onChange={(e) => setPrice(Number(e.target.value))}
+/>
