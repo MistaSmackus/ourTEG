@@ -1,133 +1,76 @@
 import { useEffect, useState } from "react";
 import { useAuthenticator } from "@aws-amplify/ui-react";
-import { Container, Card, Table } from "react-bootstrap";
-import { Line } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  LineElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  Tooltip,
-  Legend,
-  Title,
-} from "chart.js";
-import type { Schema } from "../amplify/data/resource";
+import { Container, Table, Card } from "react-bootstrap";
+import "bootstrap/dist/css/bootstrap.min.css";
 import { generateClient } from "aws-amplify/data";
-
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend, Title);
+import type { Schema } from "../amplify/data/resource";
 
 const client = generateClient<Schema>();
 
 export default function Portfolio() {
   const { user } = useAuthenticator();
-  const [portfolioHistory, setPortfolioHistory] = useState<number[]>([]);
-  const [transactions, setTransactions] = useState<Array<Schema["Transaction"]["type"]>>([]);
-  const [account, setAccount] = useState<Schema["Account"]["type"] | null>(null);
+  const [account, setAccount] = useState<Array<Schema["Account"]["type"]>>([]);
+  const [ownedStock, setOwnedStock] = useState<Array<Schema["Ownedstock"]["type"]>>([]);
 
   useEffect(() => {
-    const sub1 = client.models.Portfoliohistory.observeQuery().subscribe({
-      next: (data) => {
-        const userHist = data.items
-          .filter((entry) => entry.user === user?.username)
-          .map((entry) => Number(entry.totalvalue))
-          .sort((a, b) => a - b);
-        setPortfolioHistory(userHist);
-      },
+    const sub1 = client.models.Account.observeQuery().subscribe({
+      next: (data) => setAccount([...data.items]),
     });
 
-    const sub2 = client.models.Transaction.observeQuery().subscribe({
-      next: (data) => {
-        const userTx = data.items.filter((t) => t.owner === user?.username);
-        setTransactions(userTx);
-      },
-    });
-
-    const sub3 = client.models.Account.observeQuery().subscribe({
-      next: (data) => {
-        const found = data.items.find((acc) => acc.owner === user?.username);
-        setAccount(found || null);
-      },
+    const sub2 = client.models.Ownedstock.observeQuery().subscribe({
+      next: (data) => setOwnedStock([...data.items]),
     });
 
     return () => {
       sub1.unsubscribe();
       sub2.unsubscribe();
-      sub3.unsubscribe();
     };
-  }, [user?.username]);
+  }, []);
 
-  const totalHoldings = transactions.reduce((acc, tx) => {
-    if (!acc[tx.symbol]) acc[tx.symbol] = 0;
-    acc[tx.symbol] += tx.amount;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const labels = portfolioHistory.map((_, index) => `Day ${index + 1}`);
-
-  const chartData = {
-    labels,
-    datasets: [
-      {
-        label: "Portfolio Value ($)",
-        data: portfolioHistory,
-        tension: 0.3,
-        pointRadius: 4,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: { display: true },
-      title: { display: true, text: "Portfolio Growth Over Time" },
-    },
-  };
+  const portfolioTotalValue = ownedStock.reduce((acc, stock) => {
+    const stockTotal = Number(stock.currentPrice) * Number(stock.shares);
+    return acc + stockTotal;
+  }, 0);
 
   return (
     <Container fluid className="py-5">
-      <h2 className="text-center text-light mb-4">Your Portfolio</h2>
+      <h2 className="text-center text-light mb-4">Your Portfolio Overview</h2>
 
-      {/* Account Balance */}
-      <Card className="bg-dark text-light mb-4 p-3">
-        <h4>Account Overview</h4>
-        <p><strong>Username:</strong> {user?.username}</p>
-        <p><strong>Balance:</strong> ${Number(account?.balance ?? 0).toFixed(2)}</p>
+      {/* Account Balance & Portfolio Value */}
+      <Card className="bg-dark text-light mb-4 p-4">
+        <h4>Account Information</h4>
+        <p><strong>Username:</strong> {user?.signInDetails?.loginId?.split("@")[0]}</p>
+        <p><strong>Account Balance:</strong> ${account.length > 0 ? Number(account[0].balance ?? 0).toFixed(2) : "0.00"}</p>
+        <p><strong>Account Value (Investments):</strong> ${portfolioTotalValue.toFixed(2)}</p>
+        <p><strong>Total Net Worth:</strong> ${(portfolioTotalValue + Number(account[0]?.balance ?? 0)).toFixed(2)}</p>
       </Card>
 
-      {/* Portfolio Line Chart */}
-      <Card className="bg-secondary text-light mb-4 p-4">
-        <h4 className="text-center mb-4">Portfolio Value History</h4>
-        {portfolioHistory.length > 0 ? (
-          <Line data={chartData} options={chartOptions} />
-        ) : (
-          <p className="text-center text-muted">No portfolio history data yet.</p>
-        )}
-      </Card>
-
-      {/* Holdings */}
-      <Card className="bg-dark text-light p-4">
-        <h4>Current Holdings</h4>
-        {Object.keys(totalHoldings).length > 0 ? (
-          <Table striped bordered hover variant="dark" responsive>
+      {/* Owned Stocks Table */}
+      <Card className="bg-secondary text-light p-4">
+        <h4>Owned Stocks</h4>
+        {ownedStock.length > 0 ? (
+          <Table striped bordered hover responsive variant="dark">
             <thead>
               <tr>
-                <th>Symbol</th>
-                <th>Amount Owned</th>
+                <th>Stock Name</th>
+                <th>Shares Owned</th>
+                <th>Current Price</th>
+                <th>Total Value</th>
               </tr>
             </thead>
             <tbody>
-              {Object.entries(totalHoldings).map(([symbol, amount]) => (
-                <tr key={symbol}>
-                  <td>{symbol}</td>
-                  <td>{amount}</td>
+              {ownedStock.map((stock) => (
+                <tr key={stock.id}>
+                  <td>{stock.stockName}</td>
+                  <td>{stock.shares}</td>
+                  <td>${Number(stock.currentPrice).toFixed(2)}</td>
+                  <td>${(Number(stock.currentPrice) * Number(stock.shares)).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
           </Table>
         ) : (
-          <p className="text-muted">No stocks owned yet.</p>
+          <p className="text-muted">You don't own any stocks yet.</p>
         )}
       </Card>
     </Container>
