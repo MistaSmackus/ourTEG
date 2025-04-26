@@ -1,3 +1,4 @@
+
 import Marquee from "react-fast-marquee";
 import Card from "react-bootstrap/Card";
 import Container from "react-bootstrap/Container";
@@ -128,7 +129,6 @@ export default function Home(): JSX.Element {
 
   return (
     <Container fluid className="min-vh-100 d-flex flex-column align-items-center py-5">
-      {/* Stock Ticker */}
       <div className="w-100 bg-dark text-white text-center py-2">
         <Marquee>
           {stock.map((s) => (
@@ -142,13 +142,11 @@ export default function Home(): JSX.Element {
         </Marquee>
       </div>
 
-      {/* Hero Section */}
       <div className="text-center mb-4">
         <h1 className="fw-bold">Your Wealth, Your Future -- Powered by Titan.</h1>
         <p className="text-muted">Rise Above. Invest Like a Titan.</p>
       </div>
 
-      {/* Market Overview */}
       <Card className="w-100 shadow-sm mb-4" style={{ maxWidth: "600px" }}>
         <Card.Body>
           <h2 className="h5 mb-3">Market Snapshot</h2>
@@ -163,7 +161,6 @@ export default function Home(): JSX.Element {
         </Card.Body>
       </Card>
 
-      {/* Features Section */}
       <Container>
         <Row className="g-3">
           {features.map((feature, index) => (
