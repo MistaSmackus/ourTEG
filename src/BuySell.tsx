@@ -22,10 +22,17 @@ export default function BuySell() {
   const [stockBuyAmount, setStockBuyAmount] = useState<number>(0);
 
   useEffect(() => {
-    client.models.Stock.observeQuery().subscribe({ next: (data) => setStock([...data.items]) });
-    client.models.Account.observeQuery().subscribe({ next: (data) => setAccount([...data.items]) });
-    client.models.Transaction.observeQuery().subscribe({ next: (data) => setTransaction([...data.items]) });
-    client.models.Ownedstock.observeQuery().subscribe({ next: (data) => setOwnedStock([...data.items]) });
+    const stockSub = client.models.Stock.observeQuery().subscribe({ next: (data) => setStock([...data.items]) });
+    const accountSub = client.models.Account.observeQuery().subscribe({ next: (data) => setAccount([...data.items]) });
+    const transactionSub = client.models.Transaction.observeQuery().subscribe({ next: (data) => setTransaction([...data.items]) });
+    const ownedStockSub = client.models.Ownedstock.observeQuery().subscribe({ next: (data) => setOwnedStock([...data.items]) });
+
+    return () => {
+      stockSub.unsubscribe();
+      accountSub.unsubscribe();
+      transactionSub.unsubscribe();
+      ownedStockSub.unsubscribe();
+    };
   }, []);
 
   async function buyStock() {
@@ -33,7 +40,7 @@ export default function BuySell() {
     const sharesToBuy = stockBuyAmount;
 
     if (sharesToBuy <= 0 || isNaN(sharesToBuy)) {
-      window.alert("Invalid number of shares.");
+      alert("Invalid number of shares.");
       handleBuyClose();
       return;
     }
@@ -41,7 +48,7 @@ export default function BuySell() {
     const totalCost = Number((sharesToBuy * Number(selectedStock.price)).toFixed(2));
 
     if (account.length === 0) {
-      window.alert("You have no money. Deposit funds to buy stocks.");
+      alert("You have no money. Deposit funds to buy stocks.");
       handleBuyClose();
       return;
     }
@@ -49,7 +56,7 @@ export default function BuySell() {
     const oldBalance = Number(account[0].balance);
 
     if (oldBalance < totalCost) {
-      window.alert(`Not enough balance to buy ${selectedStock.name}. Needed: $${totalCost}`);
+      alert(`Not enough balance to buy ${selectedStock.name}. Needed: $${totalCost}`);
       handleBuyClose();
       return;
     }
@@ -99,7 +106,7 @@ export default function BuySell() {
       handleBuyClose();
     } catch (err) {
       console.error("Failed to buy stock:", err);
-      window.alert("Something went wrong. Please try again.");
+      alert("Something went wrong. Please try again.");
     }
   }
 
@@ -125,7 +132,7 @@ export default function BuySell() {
                         <td>{s.symbol}</td>
                         <td>{s.price}</td>
                         <td>
-                          <Button variant="primary" onClick={handleBuyShow}>
+                          <Button variant="primary" onClick={() => { setStockBuyIndex(index); handleBuyShow(); }}>
                             Buy {s.name}
                           </Button>
                         </td>
@@ -145,16 +152,20 @@ export default function BuySell() {
         </Modal.Header>
         <Modal.Body>
           <Form>
-            <Form.Select value={stockBuyIndex} onChange={(e) => setStockBuyIndex(Number(e.target.value))}>
-              {stock.map((s, index) => (
-                <option key={index} value={index}>{s.name}</option>
-              ))}
-            </Form.Select>
+            <Form.Group>
+              <Form.Label>Select Stock:</Form.Label>
+              <Form.Select value={stockBuyIndex} onChange={(e) => setStockBuyIndex(Number(e.target.value))}>
+                {stock.map((s, index) => (
+                  <option key={s.id} value={index}>{s.name}</option>
+                ))}
+              </Form.Select>
+            </Form.Group>
             <br />
             <Form.Group>
+              <Form.Label>Number of Shares:</Form.Label>
               <Form.Control
-                type="text"
-                placeholder="Number of Shares"
+                type="number"
+                placeholder="0"
                 value={stockBuyAmount}
                 onChange={(e) => setStockBuyAmount(Number(e.target.value))}
               />
@@ -168,15 +179,3 @@ export default function BuySell() {
     </Container>
   );
 }
-
-
-
-type="text" --> keep type as "text", but cast value to number properly
-
-<Form.Control
-  size="lg"
-  type="text"
-  placeholder="Required, format: 00.00"
-  value={price}
-  onChange={(e) => setPrice(Number(e.target.value))}
-/>
