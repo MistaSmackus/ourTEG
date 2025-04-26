@@ -8,26 +8,25 @@ import { generateClient } from "aws-amplify/data";
 const client = generateClient<Schema>();
 
 export default function ChangeHours() {
-
-  //const [market, setMarket] = useState<Array<Schema["Markethours"]["type"]>>([]);
-  //const [days, setDays] = useState<Array<Schema["Marketdays"]["type"]>>([]);//
+  const [market, setMarket] = useState<Array<Schema["Markethours"]["type"]>>([]);
+  const [days, setDays] = useState<Array<Schema["Marketdays"]["type"]>>([]);
   const [open, setOpen] = useState(new Date());
   const [close, setClose] = useState(new Date());
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
-    const subscription = client.models.Markethours.observeQuery().subscribe({
+    const sub = client.models.Markethours.observeQuery().subscribe({
       next: (data) => setMarket(data.items),
     });
-    return () => subscription.unsubscribe();
+    return () => sub.unsubscribe();
   }, []);
 
   useEffect(() => {
-    const subscription = client.models.Marketdays.observeQuery().subscribe({
+    const sub = client.models.Marketdays.observeQuery().subscribe({
       next: (data) => setDays(data.items),
     });
-    return () => subscription.unsubscribe();
+    return () => sub.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -37,71 +36,65 @@ export default function ChangeHours() {
 
   const handleHoursSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     const openTime = open.toLocaleTimeString();
     const closeTime = close.toLocaleTimeString();
 
-    const confirm = window.confirm(`Set market hours:\nOpen: ${openTime}\nClose: ${closeTime}?`);
-    if (!confirm) return;
+    const confirmed = window.confirm(`Confirm new hours:\nOpen: ${openTime}\nClose: ${closeTime}`);
+    if (!confirmed) return;
 
-    client.models.Markethours.create({
-      open: openTime,
-      close: closeTime,
-    }).then(() => {
-      alert("Market hours updated successfully.");
-    }).catch((err) => {
-      console.error("Error saving market hours:", err);
-      alert("Failed to update market hours.");
-    });
+    client.models.Markethours.create({ open: openTime, close: closeTime })
+      .then(() => alert("Market hours saved successfully."))
+      .catch((err) => {
+        console.error("Error saving hours:", err);
+        alert("Failed to save hours.");
+      });
   };
 
   const handleDaysSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedDates.length) return alert("No dates selected.");
 
-    const formattedDates = selectedDates
-      .map(date => date.toDateString()) // Example: "Mon Apr 25 2025"
-      .join(", ");
+    const formatted = selectedDates.map(d => d.toDateString()).join(", ");
 
-    alert(`Selected closed days:\n${formattedDates}`);
+    alert(`Saving closed days:\n${formatted}`);
 
-    client.models.Marketdays.create({
-      closedays: formattedDates,
-    }).then(() => {
-      alert("Closed days updated successfully.");
-    }).catch((err) => {
-      console.error("Error saving closed days:", err);
-      alert("Failed to update closed days.");
-    });
+    client.models.Marketdays.create({ closedays: formatted })
+      .then(() => alert("Closed days saved successfully."))
+      .catch((err) => {
+        console.error("Error saving days:", err);
+        alert("Failed to save closed days.");
+      });
   };
 
   return (
-    <Container fluid className="min-vh-100 d-flex flex-column align-items-center py-5">
+    <Container fluid className="min-vh-100 py-5 d-flex flex-column align-items-center">
       <div className="text-center mb-5">
-        <h1>Market Hour Management</h1>
-        <h2 className="text-muted">Current Time: {currentTime.toLocaleTimeString()}</h2>
+        <h1 className="mb-2">Market Hour Management</h1>
+        <h5 className="text-muted">Current Time: {currentTime.toLocaleTimeString()}</h5>
       </div>
 
-      {/* Change Market Hours */}
+      {/* Set Hours */}
       <Form onSubmit={handleHoursSubmit} className="w-50 mb-5">
-        <h3>Set Market Hours</h3>
+        <h3>Set Market Open/Close Hours</h3>
         <Form.Group className="mb-3">
-          <Form.Label className="text-muted">Opening Time</Form.Label>
+          <Form.Label>Opening Time</Form.Label>
           <br />
           <DatePicker
             selected={open}
-            onChange={(time) => time && setOpen(time)}
+            onChange={(t) => t && setOpen(t)}
             showTimeSelect
             showTimeSelectOnly
             timeIntervals={15}
             timeCaption="Time"
             dateFormat="h:mm aa"
           />
-          <br /><br />
-          <Form.Label className="text-muted">Closing Time</Form.Label>
+        </Form.Group>
+        <Form.Group className="mb-3">
+          <Form.Label>Closing Time</Form.Label>
           <br />
           <DatePicker
             selected={close}
-            onChange={(time) => time && setClose(time)}
+            onChange={(t) => t && setClose(t)}
             showTimeSelect
             showTimeSelectOnly
             timeIntervals={15}
@@ -112,22 +105,49 @@ export default function ChangeHours() {
         <Button variant="outline-primary" type="submit">Submit Hours</Button>
       </Form>
 
-      {/* Select Market Closed Days */}
-      <Form onSubmit={handleDaysSubmit} className="w-50">
-        <h3>Select Closed Market Days</h3>
+      {/* Select Closed Days */}
+      <Form onSubmit={handleDaysSubmit} className="w-50 mb-5">
+        <h3>Select Market Closed Days</h3>
         <Form.Group className="mb-3">
-          <Form.Label className="text-muted">Select Dates</Form.Label>
+          <Form.Label>Select Dates</Form.Label>
           <br />
           <DatePicker
-            selected={selectedDates[0]}
-            onChange={(dates: any) => setSelectedDates(dates)}
             selectsMultiple
+            selectedDates={selectedDates}
+            onChange={(dates: any) => setSelectedDates(dates)}
             shouldCloseOnSelect={false}
-            placeholderText="Click to select multiple dates"
+            placeholderText="Choose multiple dates"
           />
         </Form.Group>
         <Button variant="outline-primary" type="submit">Save Closed Days</Button>
       </Form>
+
+      {/* Display Saved Info */}
+      <div className="w-75 mt-4">
+        <h4 className="text-info">Saved Market Hours</h4>
+        {market.length ? (
+          <ul>
+            {market.map((entry, idx) => (
+              <li key={idx}>
+                Open: {entry.open} &nbsp;&nbsp;|&nbsp;&nbsp; Close: {entry.close}
+              </li>
+            ))}
+          </ul>
+        ) : <p className="text-muted">No market hours saved.</p>}
+
+        <h4 className="mt-4 text-info">Saved Closed Dates</h4>
+        {days.length ? (
+          <ul>
+            {days.map((entry, idx) => (
+              <li key={idx}>
+                {entry.closedays?.split(",").map((date, i) => (
+                  <div key={i}>{date.trim()}</div>
+                ))}
+              </li>
+            ))}
+          </ul>
+        ) : <p className="text-muted">No closed dates saved.</p>}
+      </div>
     </Container>
   );
 }
