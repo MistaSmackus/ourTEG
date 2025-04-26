@@ -31,19 +31,19 @@ export default function Home(): JSX.Element {
   }, []);
 
   useEffect(() => {
-  const marketSubscription = client.models.Marketvalue.observeQuery().subscribe({
-    next: (data) => {
-      const transformed = data.items
-        .filter((item) => item.time != null && item.value != null)
-        .map((item) => ({
-          time: item.time!,
-          value: parseFloat(item.value!), // <- use parseFloat here!
-        }));
-      setMarketVal(transformed);
-    },
-  });
-  return () => marketSubscription.unsubscribe();
-}, []);
+    const marketSubscription = client.models.Marketvalue.observeQuery().subscribe({
+      next: (data) => {
+        const transformed = data.items
+          .filter((item) => item.time != null && item.value != null)
+          .map((item) => ({
+            time: item.time!,
+            value: parseFloat(item.value!),
+          }));
+        setMarketVal(transformed);
+      },
+    });
+    return () => marketSubscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     window.onbeforeunload = generateRandomNight;
@@ -90,11 +90,12 @@ export default function Home(): JSX.Element {
 
     client.models.Stock.update({
       id: selectedStock.id,
-      price: newPrice.toFixed(2),       
+      price: newPrice.toFixed(2),
       change: formatChange(change, isIncrease),
-      last: oldPrice.toFixed(2),          
-      mentions: mentions,      
-  });
+      last: oldPrice.toFixed(2),
+      mentions: mentions,
+    });
+  }
 
   return (
     <Container fluid className="min-vh-100 d-flex flex-column align-items-center py-5">
