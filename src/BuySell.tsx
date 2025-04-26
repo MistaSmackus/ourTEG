@@ -35,8 +35,8 @@ export default function BuySell() {
     var owner = "No";
     var ownShare = "0";
 
-    const [stockBuyIndex, setStockBuyIndex] = useState("");
-    const [stockBuyAmount, setStockBuyAmount] = useState("");
+    const [stockBuyIndex, setStockBuyIndex] = useState<number>(0);
+    const [stockBuyAmount, setStockBuyAmount] = useState<number>(0);
 
         useEffect(() => {
             client.models.Stock.observeQuery().subscribe({
@@ -243,7 +243,7 @@ export default function BuySell() {
                 <Form>
                     <Modal.Title>Select a Stock</Modal.Title>
                     <br/>
-                    <Form.Select aria-label="Default select example" id="buySelect" name="buySelect" value={stockBuyIndex} onChange={(e) => setStockBuyIndex(e.target.value)}>
+                    <Form.Select aria-label="Default select example" id="buySelect" name="buySelect" value={stockBuyIndex} onChange={(e) => setStockBuyIndex(Number(e.target.value))}>
                         {stock.map((s, index) => (
                             <option value={index}>{s.name}</option>
                         ))}    
