@@ -48,61 +48,62 @@ export default function Portfolio() {
   }, 0);
 
   return (
-    <Container fluid className="py-5">
-      <h2 className="text-center text-light mb-4">Your Portfolio Overview</h2>
+ <Container fluid className="py-5">
+    <h2 className="text-center text-light mb-4">Your Portfolio Overview</h2>
 
-      {/* Account Balance & Portfolio Value */}
+    {/* Wrap everything in ONE max-width container */}
+    <Container style={{ maxWidth: "900px" }} className="mx-auto">
+
+      {/* Account Info */}
       <Card className="bg-dark text-light mb-4 p-4">
-        <h4>Account Information</h4>
+        <h4 className="text-center">Account Information</h4>
         <p><strong>Username:</strong> {user?.signInDetails?.loginId?.split("@")[0]}</p>
         <p><strong>Account Balance:</strong> ${account.length > 0 ? Number(account[0].balance ?? 0).toFixed(2) : "0.00"}</p>
         <p><strong>Account Value (Investments):</strong> ${portfolioTotalValue.toFixed(2)}</p>
         <p><strong>Total Net Worth:</strong> ${(portfolioTotalValue + Number(account[0]?.balance ?? 0)).toFixed(2)}</p>
       </Card>
 
-      {/* Chart + Table together in max-width container */}
-      <Container style={{ maxWidth: "900px" }} className="mx-auto">
-        {/* Portfolio History Chart */}
-        <Card className="bg-dark text-light mb-4 p-4">
-          <h4>Portfolio History</h4>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={portfolioHistory}>
-              <XAxis dataKey="time" stroke="#888" />
-              <YAxis stroke="#888" />
-              <Tooltip />
-              <Line type="monotone" dataKey="value" stroke="#00bcd4" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        </Card>
+      {/* Portfolio Chart */}
+      <Card className="bg-dark text-light mb-4 p-4">
+        <h4>Portfolio History</h4>
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={portfolioHistory}>
+            <XAxis dataKey="time" stroke="#888" />
+            <YAxis stroke="#888" />
+            <Tooltip />
+            <Line type="monotone" dataKey="value" stroke="#00bcd4" strokeWidth={2} />
+          </LineChart>
+        </ResponsiveContainer>
+      </Card>
 
-        {/* Owned Stocks Table */}
-        <Card className="bg-secondary text-light p-4">
-          <h4>Owned Stocks</h4>
-          {ownedStock.length > 0 ? (
-            <Table striped bordered hover responsive variant="dark">
-              <thead>
-                <tr>
-                  <th>Stock Name</th>
-                  <th>Shares Owned</th>
-                  <th>Current Price</th>
-                  <th>Total Value</th>
+      {/* Owned Stocks Table */}
+      <Card className="bg-secondary text-light p-4">
+        <h4>Owned Stocks</h4>
+        {ownedStock.length > 0 ? (
+          <Table striped bordered hover responsive variant="dark">
+            <thead>
+              <tr>
+                <th>Stock Name</th>
+                <th>Shares Owned</th>
+                <th>Current Price</th>
+                <th>Total Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ownedStock.map((stock) => (
+                <tr key={stock.id}>
+                  <td>{stock.stockName}</td>
+                  <td>{stock.shares}</td>
+                  <td>${Number(stock.currentPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td>${(Number(stock.currentPrice) * Number(stock.shares)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {ownedStock.map((stock) => (
-                  <tr key={stock.id}>
-                    <td>{stock.stockName}</td>
-                    <td>{stock.shares}</td>
-                    <td>${Number(stock.currentPrice).toFixed(2)}</td>
-                    <td>${(Number(stock.currentPrice) * Number(stock.shares)).toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          ) : (
-            <p className="text-muted">You don't own any stocks yet.</p>
-          )}
-        </Card>
+              ))}
+            </tbody>
+          </Table>
+        ) : (
+          <p className="text-muted">You don't own any stocks yet.</p>
+        )}
+      </Card>
       </Container>
     </Container>
   );

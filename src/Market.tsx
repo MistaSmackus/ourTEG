@@ -1,4 +1,3 @@
-
 import Container from "react-bootstrap/Container";
 import Table from "react-bootstrap/Table";
 import Card from "react-bootstrap/Card";
@@ -21,12 +20,19 @@ export default function MarketOverview(): JSX.Element {
   }, []);
 
   const trending = [...stock]
-    .filter((s) => s.mentions !== null && s.mentions !== undefined)
+    .filter((s) => s.mentions != null)
     .sort((a, b) => Number(b.mentions) - Number(a.mentions))
     .slice(0, 5);
 
-  const movers = [...stock]
-    .sort((a, b) => Math.abs(Number(b.change)) - Math.abs(Number(a.change)))
+  const gainers = [...stock]
+    .filter((s) => s.change && !s.change.toString().includes("-"))
+    .sort((a, b) => Number(b.change) - Number(a.change))
+    .reverse()
+    .slice(0, 5);
+
+  const losers = [...stock]
+    .filter((s) => s.change && s.change.toString().includes("-"))
+    .sort((a, b) => Number(a.change) - Number(b.change))
     .slice(0, 5);
 
   return (
@@ -54,9 +60,7 @@ export default function MarketOverview(): JSX.Element {
                 <tr key={s.id}>
                   <td>{s.symbol}</td>
                   <td>${s.price}</td>
-                  <td style={{ color: s.change?.toString().includes("-") ? "red" : "green" }}>
-                    {s.change}
-                  </td>
+                  <td style={{ color: s.change?.toString().includes("-") ? "red" : "green" }}>{s.change}</td>
                 </tr>
               ))}
             </tbody>
@@ -64,10 +68,10 @@ export default function MarketOverview(): JSX.Element {
         </Card.Body>
       </Card>
 
-      {/* Top Movers */}
+      {/* Biggest Gainers */}
       <Card className="w-100 shadow-sm mb-4" style={{ maxWidth: "900px" }}>
         <Card.Body>
-          <h2 className="h5 mb-3">Top Movers</h2>
+          <h2 className="h5 mb-3">Biggest Gainers</h2>
           <Table striped bordered hover responsive>
             <thead>
               <tr>
@@ -77,13 +81,36 @@ export default function MarketOverview(): JSX.Element {
               </tr>
             </thead>
             <tbody>
-              {movers.map((mover) => (
-                <tr key={mover.id}>
-                  <td>{mover.symbol}</td>
-                  <td>${mover.price}</td>
-                  <td style={{ color: mover.change?.toString().includes("-") ? "red" : "green" }}>
-                    {mover.change}
-                  </td>
+              {gainers.map((s) => (
+                <tr key={s.id}>
+                  <td>{s.symbol}</td>
+                  <td>${s.price}</td>
+                  <td style={{ color: "green" }}>{s.change}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Card.Body>
+      </Card>
+
+      {/* Biggest Losers */}
+      <Card className="w-100 shadow-sm mb-4" style={{ maxWidth: "900px" }}>
+        <Card.Body>
+          <h2 className="h5 mb-3">Biggest Losers</h2>
+          <Table striped bordered hover responsive>
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Price</th>
+                <th>Change</th>
+              </tr>
+            </thead>
+            <tbody>
+              {losers.map((s) => (
+                <tr key={s.id}>
+                  <td>{s.symbol}</td>
+                  <td>${s.price}</td>
+                  <td style={{ color: "red" }}>{s.change}</td>
                 </tr>
               ))}
             </tbody>
