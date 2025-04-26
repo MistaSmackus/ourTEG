@@ -11,6 +11,9 @@ import { generateClient } from "aws-amplify/data";
 
 const client = generateClient<Schema>();
 
+const toFixedNumber = (n: number, digits = 2) => Number(n.toFixed(digits));
+const formatChange = (change: number, isIncrease: boolean) => `${isIncrease ? "+" : "-"}${change.toFixed(2)}`;
+
 const features = [
   { title: "Real-Time Trading", desc: "Instant market access." },
   { title: "Portfolio Tracking", desc: "Manage your investments." },
@@ -94,10 +97,10 @@ export default function Home(): JSX.Element {
 
     client.models.Stock.update({
       id: selectedStock.id,
-      price: Number(newPrice.toFixed(2)), 
-      change: `${isIncrease ? "+" : "-"}${change.toFixed(2)}`,
-      last: Number(oldPrice.toFixed(2)), 
-      mentions: mentions.toString(), 
+      price: toFixedNumber(newPrice),
+      change: formatChange(change, isIncrease),
+      last: toFixedNumber(oldPrice),
+      mentions: mentions.toString(),
     });
   }
 
