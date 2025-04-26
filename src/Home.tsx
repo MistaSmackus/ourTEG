@@ -94,7 +94,7 @@ export default function Home(): JSX.Element {
       change: formatChange(change, isIncrease),
       last: oldPrice.toFixed(2),          
       mentions: mentions,      
-  }
+  });
 
   return (
     <Container fluid className="min-vh-100 d-flex flex-column align-items-center py-5">
