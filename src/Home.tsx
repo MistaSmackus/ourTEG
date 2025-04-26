@@ -45,108 +45,54 @@ export default function Home(): JSX.Element {
 
   useEffect(() => {
     window.onbeforeunload = generateRandomNight;
-
     const intervalInc = setInterval(generateRandomDayIncrease, 90000);
     const intervalDec = setInterval(generateRandomDayDecrease, 1000000);
-
     return () => {
       clearInterval(intervalInc);
       clearInterval(intervalDec);
     };
   }, [stock]);
 
-function generateRandomNight() {
-  if (stock.length === 0) return;
+  function generateRandomNight() {
+    if (stock.length === 0) return;
 
-  for (let i = 0; i < 5; i++) {
-    const randIndex = Math.floor(Math.random() * stock.length);
-    const selectedStock = stock[randIndex];
-    const change = Math.floor(Math.random() * 10);
-    const oldPrice = Number(selectedStock.price);
-    const newPrice = oldPrice + change;
-    const mentions = Math.floor(Math.random() * 100);
-
-    client.models.Stock.update({
-      id: selectedStock.id,
-      price: Number(newPrice.toFixed(2)),
-      change: `+${change.toFixed(2)}`,
-      last: Number(oldPrice.toFixed(2)),
-      mentions: mentions.toString(),
-    });
-  }
-
-  for (let i = 0; i < 5; i++) {
-    const randIndex = Math.floor(Math.random() * stock.length);
-    const selectedStock = stock[randIndex];
-    const change = Math.floor(Math.random() * 5);
-    const oldPrice = Number(selectedStock.price);
-    const newPrice = oldPrice - change;
-    const mentions = Math.floor(Math.random() * 100);
-
-    client.models.Stock.update({
-      id: selectedStock.id,
-      price: Number(newPrice.toFixed(2)),
-      change: `-${change.toFixed(2)}`,
-      last: Number(oldPrice.toFixed(2)),
-      mentions: mentions.toString(),
-    });
-  }
-}
     for (let i = 0; i < 5; i++) {
-      const randIndex = Math.floor(Math.random() * stock.length);
-      const selectedStock = stock[randIndex];
-      const change = Math.floor(Math.random() * 5);
-      const oldPrice = Number(selectedStock.price);
-      const newPrice = oldPrice - change;
-      const mentions = Math.floor(Math.random() * 100);
+      updateRandomStock(true);
+    }
 
-      client.models.Stock.update({
-        id: selectedStock.id,
-        price: newPrice.toFixed(2),
-        change: `-${change.toFixed(2)}`,
-        last: oldPrice.toFixed(2),
-        mentions: mentions.toString(),
-      });
+    for (let i = 0; i < 5; i++) {
+      updateRandomStock(false);
     }
   }
 
   function generateRandomDayIncrease() {
     if (stock.length === 0) return;
-
-    const randIndex = Math.floor(Math.random() * stock.length);
-    const selectedStock = stock[randIndex];
-    const change = Math.floor(Math.random() * 10);
-    const oldPrice = Number(selectedStock.price);
-    const newPrice = oldPrice + change;
-    const mentions = Math.floor(Math.random() * 100);
-
-    client.models.Stock.update({
-      id: selectedStock.id,
-      price: newPrice.toFixed(2),
-      change: `+${change.toFixed(2)}`,
-      last: oldPrice.toFixed(2),
-      mentions: mentions.toString(),
-    });
+    updateRandomStock(true);
   }
 
   function generateRandomDayDecrease() {
     if (stock.length === 0) return;
+    updateRandomStock(false);
+  }
 
+  function updateRandomStock(isIncrease: boolean) {
     const randIndex = Math.floor(Math.random() * stock.length);
     const selectedStock = stock[randIndex];
     const oldPrice = Number(selectedStock.price);
-    let change = Math.floor(Math.random() * 10);
-    if (change > oldPrice) {
+    let change = Math.floor(Math.random() * (isIncrease ? 10 : 5));
+
+    if (!isIncrease && change > oldPrice) {
       change = Math.floor(Math.random() * 5);
     }
-    const newPrice = oldPrice - change;
+
+    const newPrice = isIncrease ? oldPrice + change : oldPrice - change;
     const mentions = Math.floor(Math.random() * 100);
 
     client.models.Stock.update({
       id: selectedStock.id,
-      price: newPrice.toFixed(2),
-      change: `-${change.toFixed(2)}`,
-      last: oldPrice.toFixed(2),
+      price: Number(newPrice.toFixed(2)),
+      change: `${isIncrease ? "+" : "-"}${change.toFixed(2)}`,
+      last: Number(oldPrice.toFixed(2)),
       mentions: mentions.toString(),
     });
   }
