@@ -1,5 +1,5 @@
-import { useAuthenticator } from '@aws-amplify/ui-react';
-import { Container, Card, Accordion, Button, Modal, Form, Table, Col } from "react-bootstrap";
+import { useAuthenticator } from "@aws-amplify/ui-react";
+import { Container, Card, Accordion, Button, Modal, Form, Table, Col, Toast, ToastContainer } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useEffect, useState } from "react";
 import type { Schema } from "../amplify/data/resource";
@@ -8,22 +8,27 @@ import { generateClient } from "aws-amplify/data";
 const client = generateClient<Schema>();
 
 export default function BuySell() {
-  const { user: _user } = useAuthenticator(); // Prefix to silence unused warning
-  const [stock, setStock] = useState<Array<Schema["Stock"]["type"]>>([]);
-  const [account, setAccount] = useState<Array<Schema["Account"]["type"]>>([]);
-  const [ownedStock, setOwnedStock] = useState<Array<Schema["Ownedstock"]["type"]>>([]);
+  const { user } = useAuthenticator();
+  const [stock, setStock] = useState<Schema["Stock"]["type"][]>([]);
+  const [account, setAccount] = useState<Schema["Account"]["type"][]>([]);
+  const [ownedStock, setOwnedStock] = useState<Schema["Ownedstock"]["type"][]>([]);
 
   const [buyShow, setBuyShow] = useState(false);
-  const handleBuyClose = () => setBuyShow(false);
-  const handleBuyShow = () => setBuyShow(true);
-
-  const [stockBuyIndex, setStockBuyIndex] = useState<number>(0);
-  const [stockBuyAmount, setStockBuyAmount] = useState<number>(0);
+  const [sellShow, setSellShow] = useState(false);
+  const [stockIndex, setStockIndex] = useState(0);
+  const [shareAmount, setShareAmount] = useState(0);
+  const [toastMessage, setToastMessage] = useState("");
 
   useEffect(() => {
-    const stockSub = client.models.Stock.observeQuery().subscribe({ next: (data) => setStock([...data.items]) });
-    const accountSub = client.models.Account.observeQuery().subscribe({ next: (data) => setAccount([...data.items]) });
-    const ownedStockSub = client.models.Ownedstock.observeQuery().subscribe({ next: (data) => setOwnedStock([...data.items]) });
+    const stockSub = client.models.Stock.observeQuery().subscribe({
+      next: (data) => setStock([...data.items]),
+    });
+    const accountSub = client.models.Account.observeQuery().subscribe({
+      next: (data) => setAccount([...data.items]),
+    });
+    const ownedStockSub = client.models.Ownedstock.observeQuery().subscribe({
+      next: (data) => setOwnedStock([...data.items]),
+    });
 
     return () => {
       stockSub.unsubscribe();
@@ -32,86 +37,113 @@ export default function BuySell() {
     };
   }, []);
 
+  const handleBuyClose = () => setBuyShow(false);
+  const handleBuyShow = (index: number) => {
+    setStockIndex(index);
+    setShareAmount(0);
+    setBuyShow(true);
+  };
+
+  const handleSellClose = () => setSellShow(false);
+  const handleSellShow = (index: number) => {
+    setStockIndex(index);
+    setShareAmount(0);
+    setSellShow(true);
+  };
+
   async function buyStock() {
-    const selectedStock = stock[stockBuyIndex];
-    const sharesToBuy = stockBuyAmount;
+    const selected = stock[stockIndex];
+    if (!selected || shareAmount <= 0 || isNaN(shareAmount)) return;
 
-    if (sharesToBuy <= 0 || isNaN(sharesToBuy)) {
-      alert("Invalid number of shares.");
-      handleBuyClose();
-      return;
-    }
+    const totalCost = Number(selected.price) * shareAmount;
+    const userAccount = account[0];
+    if (!userAccount || Number(userAccount.balance) < totalCost) return;
 
-    const totalCost = Number((sharesToBuy * Number(selectedStock.price)).toFixed(2));
-
-    if (account.length === 0) {
-      alert("You have no money. Deposit funds to buy stocks.");
-      handleBuyClose();
-      return;
-    }
-
-    const oldBalance = Number(account[0].balance);
-
-    if (oldBalance < totalCost) {
-      alert(`Not enough balance to buy ${selectedStock.name}. Needed: $${totalCost}`);
-      handleBuyClose();
-      return;
-    }
-
-    try {
-      const existingOwned = ownedStock.find((os) => os.stockId === selectedStock.id);
-
-      if (existingOwned) {
-        await client.models.Ownedstock.update({
-          id: existingOwned.id,
-          currentPrice: selectedStock.price,
-          stockName: selectedStock.name,
-          owns: true,
-          stockId: selectedStock.id,
-          shares: (Number(existingOwned.shares) + sharesToBuy).toFixed(2),
-        });
-      } else {
-        await client.models.Ownedstock.create({
-          currentPrice: selectedStock.price,
-          stockName: selectedStock.name,
-          owns: true,
-          stockId: selectedStock.id,
-          shares: sharesToBuy.toFixed(2),
-        });
-      }
-
-      await client.models.Transaction.create({
-        type: "buystock",
-        amount: totalCost.toFixed(2),
-        date: new Date().toISOString().split("T")[0],
-        stock: selectedStock.name,
+    const existing = ownedStock.find((o) => o.stockId === selected.id);
+    if (existing) {
+      await client.models.Ownedstock.update({
+        id: existing.id,
+        shares: (Number(existing.shares) + shareAmount).toFixed(2),
+      });
+    } else {
+      await client.models.Ownedstock.create({
+        stockId: selected.id,
+        stockName: selected.name,
+        currentPrice: selected.price,
+        shares: shareAmount.toFixed(2),
         owns: true,
-        success: true,
-        stockId: selectedStock.id,
-        shares: sharesToBuy.toFixed(2),
       });
-
-      const newBalance = oldBalance - totalCost;
-      const newAccountValue = Number(account[0].accountvalue) + totalCost;
-
-      await client.models.Account.update({
-        id: account[0].id,
-        balance: newBalance.toFixed(2),
-        accountvalue: newAccountValue.toFixed(2),
-      });
-
-      handleBuyClose();
-    } catch (err) {
-      console.error("Failed to buy stock:", err);
-      alert("Something went wrong. Please try again.");
     }
+
+    await client.models.Transaction.create({
+      type: "buystock",
+      amount: totalCost.toFixed(2),
+      date: new Date().toISOString(),
+      stock: selected.name,
+      owns: true,
+      success: true,
+      stockId: selected.id,
+      shares: shareAmount.toFixed(2),
+    });
+
+    await client.models.Account.update({
+      id: userAccount.id,
+      balance: (Number(userAccount.balance) - totalCost).toFixed(2),
+      accountvalue: (Number(userAccount.accountvalue) + totalCost).toFixed(2),
+    });
+
+    setToastMessage(`Bought ${shareAmount} share(s) of ${selected.name}!`);
+    setBuyShow(false);
   }
 
-  return (
-    <Container className="py-4">
-      <h1 className="text-white text-center mb-4">Time to Engage</h1>
+  async function sellStock() {
+    const selected = stock[stockIndex];
+    const holding = ownedStock.find((o) => o.stockId === selected.id);
+    if (!holding || shareAmount <= 0 || Number(holding.shares) < shareAmount) return;
 
-      <Card className="mb-5">
+    const totalGain = Number(selected.price) * shareAmount;
+    const newShareCount = Number(holding.shares) - shareAmount;
+
+    if (newShareCount === 0) {
+      await client.models.Ownedstock.delete({ id: holding.id });
+    } else {
+      await client.models.Ownedstock.update({
+        id: holding.id,
+        shares: newShareCount.toFixed(2),
+      });
+    }
+
+    await client.models.Transaction.create({
+      type: "sellstock",
+      amount: totalGain.toFixed(2),
+      date: new Date().toISOString(),
+      stock: selected.name,
+      owns: false,
+      success: true,
+      stockId: selected.id,
+      shares: shareAmount.toFixed(2),
+    });
+
+    const userAccount = account[0];
+    await client.models.Account.update({
+      id: userAccount.id,
+      balance: (Number(userAccount.balance) + totalGain).toFixed(2),
+      accountvalue: (Number(userAccount.accountvalue) - totalGain).toFixed(2),
+    });
+
+    setToastMessage(`Sold ${shareAmount} share(s) of ${selected.name}!`);
+    setSellShow(false);
+  }
+
+  const availableShares = (stockId: string) => {
+    const owned = ownedStock.find((o) => o.stockId === stockId);
+    return owned ? Number(owned.shares) : 0;
+  };
+
+  return (
+    <Container className="py-5">
+      <h1 className="text-white text-center mb-4">Time to Engage</h1>
+      <Card>
         <Card.Header><h4>Available Stocks</h4></Card.Header>
         <Card.Body>
           <Accordion>
@@ -122,17 +154,17 @@ export default function BuySell() {
                   <Col>${s.price}</Col>
                 </Accordion.Header>
                 <Accordion.Body>
-                  <Table striped bordered hover responsive>
-                    <thead><tr><th>Company Name</th><th>Symbol</th><th>Price</th><th>Buy</th></tr></thead>
+                  <Table>
+                    <thead><tr><th>Name</th><th>Symbol</th><th>Buy</th><th>Sell</th></tr></thead>
                     <tbody>
                       <tr>
                         <td>{s.name}</td>
                         <td>{s.symbol}</td>
-                        <td>{s.price}</td>
                         <td>
-                          <Button variant="primary" onClick={() => { setStockBuyIndex(index); handleBuyShow(); }}>
-                            Buy {s.name}
-                          </Button>
+                          <Button onClick={() => handleBuyShow(index)}>Buy</Button>
+                        </td>
+                        <td>
+                          <Button variant="danger" onClick={() => handleSellShow(index)}>Sell</Button>
                         </td>
                       </tr>
                     </tbody>
@@ -144,41 +176,42 @@ export default function BuySell() {
         </Card.Body>
       </Card>
 
-      <Modal show={buyShow} onHide={handleBuyClose} backdrop="static" keyboard={false} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Buy Stock</Modal.Title>
-        </Modal.Header>
+      {/* Buy Modal */}
+      <Modal show={buyShow} onHide={handleBuyClose} centered>
+        <Modal.Header closeButton><Modal.Title>Buy Stock</Modal.Title></Modal.Header>
         <Modal.Body>
-          <Form>
-            <Form.Group>
-              <Form.Label>Select Stock:</Form.Label>
-              <Form.Select
-                value={stockBuyIndex}
-                onChange={(e) => setStockBuyIndex(Number(e.target.value))}
-              >
-                {stock.map((s, index) => (
-                  <option key={s.id} value={index}>{s.name}</option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-
-            <Form.Group className="mt-3">
-              <Form.Label>Number of Shares:</Form.Label>
-              <Form.Control
-                type="number"
-                placeholder="0"
-                value={stockBuyAmount}
-                onChange={(e) => setStockBuyAmount(Number(e.target.value))}
-              />
-            </Form.Group>
-
-            <div className="d-flex justify-content-end mt-4">
-              <Button variant="secondary" onClick={handleBuyClose} className="me-2">Cancel</Button>
-              <Button variant="primary" onClick={buyStock}>Confirm Purchase</Button>
-            </div>
-          </Form>
+          <Form.Group>
+            <Form.Label>Shares</Form.Label>
+            <Form.Control type="number" value={shareAmount} onChange={(e) => setShareAmount(Number(e.target.value))} />
+          </Form.Group>
         </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleBuyClose}>Cancel</Button>
+          <Button onClick={buyStock}>Confirm Buy</Button>
+        </Modal.Footer>
       </Modal>
+
+      {/* Sell Modal */}
+      <Modal show={sellShow} onHide={handleSellClose} centered>
+        <Modal.Header closeButton><Modal.Title>Sell Stock</Modal.Title></Modal.Header>
+        <Modal.Body>
+          <Form.Group>
+            <Form.Label>Shares (Available: {availableShares(stock[stockIndex]?.id)})</Form.Label>
+            <Form.Control type="number" value={shareAmount} onChange={(e) => setShareAmount(Number(e.target.value))} />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleSellClose}>Cancel</Button>
+          <Button variant="danger" onClick={sellStock}>Confirm Sell</Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Toast Message */}
+      <ToastContainer position="bottom-center" className="mb-4">
+        <Toast show={!!toastMessage} onClose={() => setToastMessage("")} delay={2500} autohide bg="success">
+          <Toast.Body>{toastMessage}</Toast.Body>
+        </Toast>
+      </ToastContainer>
     </Container>
   );
 }
