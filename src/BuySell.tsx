@@ -11,7 +11,6 @@ export default function BuySell() {
   const { user: _user } = useAuthenticator(); // Prefix to silence unused warning
   const [stock, setStock] = useState<Array<Schema["Stock"]["type"]>>([]);
   const [account, setAccount] = useState<Array<Schema["Account"]["type"]>>([]);
-  const [transaction, setTransaction] = useState<Array<Schema["Transaction"]["type"]>>([]);
   const [ownedStock, setOwnedStock] = useState<Array<Schema["Ownedstock"]["type"]>>([]);
 
   const [buyShow, setBuyShow] = useState(false);
@@ -24,13 +23,11 @@ export default function BuySell() {
   useEffect(() => {
     const stockSub = client.models.Stock.observeQuery().subscribe({ next: (data) => setStock([...data.items]) });
     const accountSub = client.models.Account.observeQuery().subscribe({ next: (data) => setAccount([...data.items]) });
-    const transactionSub = client.models.Transaction.observeQuery().subscribe({ next: (data) => setTransaction([...data.items]) });
     const ownedStockSub = client.models.Ownedstock.observeQuery().subscribe({ next: (data) => setOwnedStock([...data.items]) });
 
     return () => {
       stockSub.unsubscribe();
       accountSub.unsubscribe();
-      transactionSub.unsubscribe();
       ownedStockSub.unsubscribe();
     };
   }, []);
@@ -157,7 +154,7 @@ export default function BuySell() {
               <Form.Label>Select Stock:</Form.Label>
               <Form.Select
                 value={stockBuyIndex}
-                onChange={(e) => setStockBuyIndex(Number(e.target.value))} // Cast to number
+                onChange={(e) => setStockBuyIndex(Number(e.target.value))}
               >
                 {stock.map((s, index) => (
                   <option key={s.id} value={index}>{s.name}</option>
@@ -171,7 +168,7 @@ export default function BuySell() {
                 type="number"
                 placeholder="0"
                 value={stockBuyAmount}
-                onChange={(e) => setStockBuyAmount(Number(e.target.value))} // Cast to number
+                onChange={(e) => setStockBuyAmount(Number(e.target.value))}
               />
             </Form.Group>
 
