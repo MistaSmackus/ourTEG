@@ -1,7 +1,6 @@
-{/*import { useState } from "react";*/}
+import { useEffect, useState } from "react";
 import { Container, Table, Card } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { useEffect, useState } from "react";
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 
@@ -22,159 +21,165 @@ export default function MarketOverview() {
   const [stock, setStock] = useState<Array<Schema["Stock"]["type"]>>([]);
 
   useEffect(() => {
-      client.models.Stock.observeQuery().subscribe({
-        next: (data) => setStock([...data.items]),
-      });
+    const subscription = client.models.Stock.observeQuery().subscribe({
+      next: (data) => {
+        console.log("Fetched stock data:", data.items);
+        setStock([...data.items]);
+      },
+    });
 
+    return () => subscription.unsubscribe();
   }, []);
-   
-  var indices;
-  var movers;
-  var trends;
-  indices = stock;
-  indices.sort((a, b) => Math.abs(Number(b.price)) - Math.abs(Number(a.price)));
-  indices.length = 5;
-  movers = stock;
-  movers.sort((a, b) => Math.abs(Number(b.change)) - Math.abs(Number(a.change)));
-  movers.length = 5;
-  trends = stock;
-  trends.sort((a, b) => Number(b.mentions) - Number(a.mentions));
-  trends.length =5;
- 
+
+  const indices = [...stock]
+    .filter(s => s.price)
+    .sort((a, b) => Math.abs(Number(b.price)) - Math.abs(Number(a.price)))
+    .slice(0, 5);
+
+  const movers = [...stock]
+    .filter(s => s.change)
+    .sort((a, b) => Math.abs(Number(b.change)) - Math.abs(Number(a.change)))
+    .slice(0, 5);
+
+  const trends = [...stock]
+    .filter(s => typeof s.mentions === "number")
+    .sort((a, b) => Number(b.mentions) - Number(a.mentions))
+    .slice(0, 5);
+
   return (
     <Container fluid className="py-5 text-white text-center">
       <h2 className="text-light mb-4">Market Overview</h2>
 
-      {/* Centered Layout for Widgets */}
       <div className="d-flex flex-column align-items-center">
-        {/* First Row: Market Indices, Market Movers, Global Markets */}
+        {/* Top row widgets */}
         <div className="d-flex justify-content-center flex-wrap w-100">
-          {/*{visibleWidgets["market-indices"] && (*/}
-            <Card className="m-2 p-3 bg-secondary text-light" style={{ width: "30%" }}>
-              <h5>Market Indices</h5>
-              <Table striped bordered hover responsive variant="dark">
-                <thead>
-                  <tr>
-                    <th>Index</th>
-                    <th>Price</th>
-                    <th>Change</th>
+          {/* Market Indices */}
+          <Card className="m-2 p-3 bg-secondary text-light" style={{ width: "30%" }}>
+            <h5>Market Indices</h5>
+            <Table striped bordered hover responsive variant="dark">
+              <thead>
+                <tr>
+                  <th>Index</th>
+                  <th>Price</th>
+                  <th>Change</th>
+                </tr>
+              </thead>
+              <tbody>
+                {indices.map((s) => (
+                  <tr key={s.name}>
+                    <td>{s.name || "N/A"}</td>
+                    <td>{s.price || "-"}</td>
+                    <td style={{ color: s.change?.includes("-") ? "red" : "green" }}>
+                      {s.change || "0.00%"}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {indices.map((s) => (
-                    <tr key={s.name}>
-                      <td>{s.name}</td>
-                      <td>{s.price}</td>
-                      <td style={{ color: s.change?.includes("-") ? "red" : "green" }}>{s.change}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </Card>
-          {/*)}*/}
+                ))}
+              </tbody>
+            </Table>
+          </Card>
 
-          {/*{visibleWidgets["market-movers"] && (*/}
-            <Card className="m-2 p-3 bg-secondary text-light" style={{ width: "30%" }}>
-              <h5>Market Movers</h5>
-              <Table striped bordered hover responsive variant="dark">
-                <thead>
-                  <tr>
-                    <th>Symbol</th>
-                    <th>Last</th>
-                    <th>Change</th>
-                    <th>Volume</th>
+          {/* Market Movers */}
+          <Card className="m-2 p-3 bg-secondary text-light" style={{ width: "30%" }}>
+            <h5>Market Movers</h5>
+            <Table striped bordered hover responsive variant="dark">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Last</th>
+                  <th>Change</th>
+                  <th>Volume</th>
+                </tr>
+              </thead>
+              <tbody>
+                {movers.map((mover) => (
+                  <tr key={mover.symbol}>
+                    <td>{mover.symbol || "N/A"}</td>
+                    <td>{mover.last || "-"}</td>
+                    <td style={{ color: mover.change?.includes("-") ? "red" : "green" }}>
+                      {mover.change || "0.00%"}
+                    </td>
+                    <td>{mover.volume || "-"}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {movers.map((mover) => (
-                    <tr key={mover.symbol}>
-                      <td>{mover.symbol}</td>
-                      <td>{mover.last}</td>
-                      <td style={{ color: mover.change?.includes("-") ? "red" : "green" }}>{mover.change}</td>
-                      <td>{mover.volume}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </Card>
-          {/*)}*/}
+                ))}
+              </tbody>
+            </Table>
+          </Card>
 
-          {/*{visibleWidgets["global-markets"] && (*/}
-            <Card className="m-2 p-3 bg-secondary text-light" style={{ width: "30%" }}>
-              <h5>Global Markets</h5>
-              <Table striped bordered hover responsive variant="dark">
-                <thead>
-                  <tr>
-                    <th>Market</th>
-                    <th>Value</th>
-                    <th>Change</th>
+          {/* Global Markets */}
+          <Card className="m-2 p-3 bg-secondary text-light" style={{ width: "30%" }}>
+            <h5>Global Markets</h5>
+            <Table striped bordered hover responsive variant="dark">
+              <thead>
+                <tr>
+                  <th>Market</th>
+                  <th>Value</th>
+                  <th>Change</th>
+                </tr>
+              </thead>
+              <tbody>
+                {globalMarkets.map((market) => (
+                  <tr key={market.name}>
+                    <td>{market.name}</td>
+                    <td>{market.value}</td>
+                    <td style={{ color: market.change.includes("-") ? "red" : "green" }}>
+                      {market.change}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {globalMarkets.map((market) => (
-                    <tr key={market.name}>
-                      <td>{market.name}</td>
-                      <td>{market.value}</td>
-                      <td style={{ color: market.change.includes("-") ? "red" : "green" }}>{market.change}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </Card>
-          {/*)}*/}
+                ))}
+              </tbody>
+            </Table>
+          </Card>
         </div>
 
-        {/* Second Row: Trending Stocks, Economic Events */}
+        {/* Bottom row widgets */}
         <div className="d-flex justify-content-center flex-wrap w-100">
-          {/*{visibleWidgets["trending-stocks"] && (*/}
-            <Card className="m-2 p-3 bg-secondary text-light" style={{ width: "45%" }}>
-              <h5>Trending Stocks</h5>
-              <Table striped bordered hover responsive variant="dark">
-                <thead>
-                  <tr>
-                    <th>Symbol</th>
-                    <th>Last Price</th>
-                    <th>Mentions</th>
+          {/* Trending Stocks */}
+          <Card className="m-2 p-3 bg-secondary text-light" style={{ width: "45%" }}>
+            <h5>Trending Stocks</h5>
+            <Table striped bordered hover responsive variant="dark">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Last Price</th>
+                  <th>Mentions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {trends.map((stock) => (
+                  <tr key={stock.symbol}>
+                    <td>{stock.symbol || "N/A"}</td>
+                    <td>{stock.last || "-"}</td>
+                    <td>{stock.mentions ?? 0}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {trends.map((stock) => (
-                    <tr key={stock.symbol}>
-                      <td>{stock.symbol}</td>
-                      <td>{stock.last}</td>
-                      <td>{stock.mentions}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </Card>
-          {/*)}*/}
+                ))}
+              </tbody>
+            </Table>
+          </Card>
 
-          {/*{visibleWidgets["economic-events"] && (*/}
-            <Card className="m-2 p-3 bg-secondary text-light" style={{ width: "45%" }}>
-              <h5>Economic Events</h5>
-              <Table striped bordered hover responsive variant="dark">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Event</th>
-                    <th>Forecast</th>
-                    <th>Previous</th>
+          {/* Economic Events */}
+          <Card className="m-2 p-3 bg-secondary text-light" style={{ width: "45%" }}>
+            <h5>Economic Events</h5>
+            <Table striped bordered hover responsive variant="dark">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Event</th>
+                  <th>Forecast</th>
+                  <th>Previous</th>
+                </tr>
+              </thead>
+              <tbody>
+                {economicEvents.map((event) => (
+                  <tr key={event.date}>
+                    <td>{event.date}</td>
+                    <td>{event.event}</td>
+                    <td>{event.forecast}</td>
+                    <td>{event.previous}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {economicEvents.map((event) => (
-                    <tr key={event.date}>
-                      <td>{event.date}</td>
-                      <td>{event.event}</td>
-                      <td>{event.forecast}</td>
-                      <td>{event.previous}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </Card>
-          {/*)}*/}
+                ))}
+              </tbody>
+            </Table>
+          </Card>
         </div>
       </div>
     </Container>
