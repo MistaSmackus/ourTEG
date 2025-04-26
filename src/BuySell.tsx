@@ -85,7 +85,7 @@ export default function BuySell() {
 
       await client.models.Transaction.create({
         type: "buystock",
-        amount: totalCost.toString(),
+        amount: totalCost.toFixed(2).toString(),
         date: new Date().toISOString().split("T")[0],
         stock: selectedStock.name,
         owns: true,
