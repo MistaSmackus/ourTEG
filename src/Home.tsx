@@ -55,26 +55,43 @@ export default function Home(): JSX.Element {
     };
   }, [stock]);
 
-  function generateRandomNight() {
-    if (stock.length === 0) return;
+function generateRandomNight() {
+  if (stock.length === 0) return;
 
-    for (let i = 0; i < 5; i++) {
-      const randIndex = Math.floor(Math.random() * stock.length);
-      const selectedStock = stock[randIndex];
-      const change = Math.floor(Math.random() * 10);
-      const oldPrice = Number(selectedStock.price);
-      const newPrice = oldPrice + change;
-      const mentions = Math.floor(Math.random() * 100);
+  for (let i = 0; i < 5; i++) {
+    const randIndex = Math.floor(Math.random() * stock.length);
+    const selectedStock = stock[randIndex];
+    const change = Math.floor(Math.random() * 10);
+    const oldPrice = Number(selectedStock.price);
+    const newPrice = oldPrice + change;
+    const mentions = Math.floor(Math.random() * 100);
 
-      client.models.Stock.update({
-        id: selectedStock.id,
-        price: newPrice.toFixed(2),
-        change: `+${change.toFixed(2)}`,
-        last: oldPrice.toFixed(2),
-        mentions: mentions.toString(),
-      });
-    }
+    client.models.Stock.update({
+      id: selectedStock.id,
+      price: Number(newPrice.toFixed(2)),
+      change: `+${change.toFixed(2)}`,
+      last: Number(oldPrice.toFixed(2)),
+      mentions: mentions.toString(),
+    });
+  }
 
+  for (let i = 0; i < 5; i++) {
+    const randIndex = Math.floor(Math.random() * stock.length);
+    const selectedStock = stock[randIndex];
+    const change = Math.floor(Math.random() * 5);
+    const oldPrice = Number(selectedStock.price);
+    const newPrice = oldPrice - change;
+    const mentions = Math.floor(Math.random() * 100);
+
+    client.models.Stock.update({
+      id: selectedStock.id,
+      price: Number(newPrice.toFixed(2)),
+      change: `-${change.toFixed(2)}`,
+      last: Number(oldPrice.toFixed(2)),
+      mentions: mentions.toString(),
+    });
+  }
+}
     for (let i = 0; i < 5; i++) {
       const randIndex = Math.floor(Math.random() * stock.length);
       const selectedStock = stock[randIndex];
