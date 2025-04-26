@@ -13,14 +13,21 @@ export default function Portfolio() {
   const [account, setAccount] = useState<Array<Schema["Account"]["type"]>>([]);
   const [ownedStock, setOwnedStock] = useState<Array<Schema["Ownedstock"]["type"]>>([]);
   const [portfolioHistory, setPortfolioHistory] = useState<Array<{ time: string; value: number }>>([]);
+  const [lastUpdated, setLastUpdated] = useState<string>("");
 
   useEffect(() => {
     const sub1 = client.models.Account.observeQuery().subscribe({
-      next: (data) => setAccount([...data.items]),
+      next: (data) => {
+        setAccount([...data.items]);
+        setLastUpdated(new Date().toLocaleString());
+      },
     });
 
     const sub2 = client.models.Ownedstock.observeQuery().subscribe({
-      next: (data) => setOwnedStock([...data.items]),
+      next: (data) => {
+        setOwnedStock([...data.items]);
+        setLastUpdated(new Date().toLocaleString());
+      },
     });
 
     const sub3 = client.models.Marketvalue.observeQuery().subscribe({
@@ -32,6 +39,7 @@ export default function Portfolio() {
             value: parseFloat(item.value!),
           }));
         setPortfolioHistory(transformed);
+        setLastUpdated(new Date().toLocaleString());
       },
     });
 
@@ -51,7 +59,10 @@ export default function Portfolio() {
 
   return (
     <Container className="py-5">
-      <h2 className="text-center text-light mb-4">Your Portfolio Overview</h2>
+      <h2 className="text-center text-light mb-2">Your Portfolio Overview</h2>
+      <p className="text-center text-muted mb-4" style={{ fontSize: "0.9rem" }}>
+        Last Updated: {lastUpdated}
+      </p>
 
       <Container style={{ maxWidth: "900px" }} className="mx-auto">
 

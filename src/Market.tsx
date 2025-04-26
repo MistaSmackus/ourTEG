@@ -5,40 +5,6 @@ import { generateClient } from "aws-amplify/data";
 
 const client = generateClient<Schema>();
 
-const generateRandomEconomicEvents = (count: number) => {
-  const eventTypes = [
-    "CPI Inflation Report",
-    "Fed Interest Rate Decision",
-    "Nonfarm Payrolls Report",
-    "Retail Sales Report",
-    "GDP Growth Report",
-    "Unemployment Rate",
-  ];
-
-  const getRandomDate = () => {
-    const day = Math.floor(Math.random() * 28) + 1;
-    return `Oct ${day}`;
-  };
-
-  const getRandomPercentage = () => {
-    const value = (Math.random() * 4 + 2).toFixed(2); // 2.00% to 6.00%
-    return `${value}%`;
-  };
-
-  const events = [];
-  for (let i = 0; i < count; i++) {
-    const forecast = getRandomPercentage();
-    const previous = (parseFloat(forecast) + (Math.random() * 0.5 - 0.25)).toFixed(2) + "%";
-    events.push({
-      date: getRandomDate(),
-      event: eventTypes[Math.floor(Math.random() * eventTypes.length)],
-      forecast,
-      previous,
-    });
-  }
-  return events;
-};
-
 export default function MarketOverview() {
   const [stocks, setStocks] = useState<Schema["Stock"]["type"][]>([]);
   const [showSections, setShowSections] = useState({
@@ -47,11 +13,14 @@ export default function MarketOverview() {
     globalMarkets: true,
     economicEvents: true,
   });
-  const [economicEvents] = useState(() => generateRandomEconomicEvents(3));
+  const [lastRefresh, setLastRefresh] = useState<string>("");
 
   useEffect(() => {
     const sub = client.models.Stock.observeQuery().subscribe({
-      next: (data) => setStocks([...data.items]),
+      next: (data) => {
+        setStocks([...data.items]);
+        setLastRefresh(new Date().toLocaleString());
+      },
     });
     return () => sub.unsubscribe();
   }, []);
@@ -72,7 +41,10 @@ export default function MarketOverview() {
 
   return (
     <Container className="py-5 text-light">
-      <h2 className="text-center mb-4">Market Overview</h2>
+      <h2 className="text-center mb-2">Market Overview</h2>
+      <p className="text-center text-muted mb-4" style={{ fontSize: "0.9rem" }}>
+        Last Stock Update: {lastRefresh}
+      </p>
 
       <div className="d-flex justify-content-center gap-2 mb-4">
         <Button variant="primary" onClick={() => toggleSection("globalMarkets")}>
@@ -180,14 +152,8 @@ export default function MarketOverview() {
                     </tr>
                   </thead>
                   <tbody>
-                    {economicEvents.map((e, idx) => (
-                      <tr key={idx}>
-                        <td>{e.date}</td>
-                        <td>{e.event}</td>
-                        <td>{e.forecast}</td>
-                        <td>{e.previous}</td>
-                      </tr>
-                    ))}
+                    <tr><td>Oct 25</td><td>CPI Inflation Report</td><td>+3.8%</td><td>+4.0%</td></tr>
+                    <tr><td>Nov 3</td><td>Federal Rate Decision</td><td>5.50%</td><td>5.25%</td></tr>
                   </tbody>
                 </Table>
               </Card.Body>
