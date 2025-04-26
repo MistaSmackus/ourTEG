@@ -22,7 +22,7 @@ export default function BuySell() {
     const [stock, setStock] = useState<Array<Schema["Stock"]["type"]>>([]);
     const [account, setAccount] = useState<Array<Schema["Account"]["type"]>>([]);
     const [transaction, setTransaction] = useState<Array<Schema["Transaction"]["type"]>>([]);
-    //const [ownedStock, setOwnedStock] = useState<Array<Schema["Ownedstock"]["type"]>>([]);
+    const [ownedStock, setOwnedStock] = useState<Array<Schema["Ownedstock"]["type"]>>([]);
 
     const [buyShow, setBuyShow] = useState(false);
     const handleBuyClose = () => setBuyShow(false);
@@ -62,7 +62,7 @@ export default function BuySell() {
 
         console.log(transaction);
 
-    {/*                
+                    
         useEffect(() => {
             client.models.Ownedstock.observeQuery().subscribe({
                 next: (data) => setOwnedStock([...data.items]),
@@ -172,7 +172,7 @@ export default function BuySell() {
     }
 
     
-    function sellStock() {
+    {/*function sellStock() {
         console.log("test");
         handleSellClose();
     }*/}
@@ -255,12 +255,12 @@ export default function BuySell() {
                         <Form.Control type="text" placeholder="00" autoFocus value={stockBuyAmount} onChange={(e) => setStockBuyAmount(e.target.value)}/>
                     </Form.Group>
                     <br/>
-                    <Modal.Title>That many shares will cost: {stockBuyAmount ? (Number(stockBuyAmount)*Number(stock[Number(stockBuyIndex)].price)).toFixed(2).toString() : "0.00"}</Modal.Title>
+                    <Modal.Title>That many shares will cost: {stockBuyAmount ? (Number(stockBuyAmount)*Number(stock[Number(stockBuyIndex)]?.price)).toFixed(2).toString() : "0.00"}</Modal.Title>
                     <br/>
                     <Modal.Title className='text-muted'>Your account balance is: ${account.length===1 ? account[0].balance : "0.00"}</Modal.Title>
                     <br/>
                     <Button variant="secondary" onClick={handleBuyClose}>Cancel</Button>
-                    <Button variant="outline-primary" onClick={handleBuyClose}>Confirm Purchase</Button>    
+                    <Button variant="outline-primary" onClick={buyStock}>Confirm Purchase</Button>    
                 </Form>                     
                 </Modal.Body>
 

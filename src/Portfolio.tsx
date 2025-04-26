@@ -1,13 +1,11 @@
 import Table from "react-bootstrap/Table";
 import Card from "react-bootstrap/Card";
 import Container from "react-bootstrap/Container";
-import Button from "react-bootstrap/Button";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import { Line } from "react-chartjs-2";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "../amplify/data/resource";
 import { useEffect, useState } from "react";
-import Form from "react-bootstrap/Form";
 import {
   Chart as ChartJS,
   LineElement,
@@ -31,10 +29,6 @@ export default function Portfolio() {
   const [portfolioHistory, setPortfolioHistory] = useState<number[]>([]);
   const [totalEarnings, setTotalEarnings] = useState("$0.00");
   const [accountBalance, setAccountBalance] = useState("$0.00");
-  const [purchasedStocks, setPurchasedStocks] = useState<any[]>([]);
-  const [stockName, setStockName] = useState("");
-  const [shares, setShares] = useState("0");
-  const [currentPrice, setCurrentPrice] = useState("0");
 
   useEffect(() => {
     async function fetchData() {
@@ -51,7 +45,6 @@ export default function Portfolio() {
 
         const ownedRes = await client.models.Ownedstock.list();
         const owned = ownedRes.data || [];
-        setPurchasedStocks(owned);
 
         const stockTotal = owned.reduce((acc, s) => {
           return acc + parseFloat(s.currentPrice || "0") * parseInt(s.shares || "0");
@@ -70,47 +63,6 @@ export default function Portfolio() {
     }
     fetchData();
   }, []);
-
-  const handleAddStock = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await client.models.Ownedstock.create({
-        stockName,
-        shares,
-        currentPrice,
-      });
-
-      const allStocksRes = await client.models.Ownedstock.list();
-      const allStocks = allStocksRes.data || [];
-
-      const total = allStocks.reduce((acc, s) => {
-        return acc + parseFloat(s.currentPrice || "0") * parseInt(s.shares || "0");
-      }, 0);
-
-      await client.models.Marketvalue.create({
-        value: total.toFixed(2),
-        time: new Date().toISOString(),
-      });
-
-      setStockName("");
-      setShares("0");
-      setCurrentPrice("0");
-      setPurchasedStocks(allStocks);
-      setTotalEarnings("$" + total.toFixed(2));
-
-      const historyRes = await client.models.Marketvalue.list();
-      const sorted = historyRes.data
-        ?.filter(entry => entry.time)
-        ?.sort((a, b) => new Date(a.time ?? "").getTime() - new Date(b.time ?? "").getTime())
-        ?.map((entry) => parseFloat(entry.value ?? "0"));
-      setPortfolioHistory(sorted || []);
-
-      alert("Stock added and graph updated!");
-    } catch (err) {
-      console.error("Failed to add stock:", err);
-      alert("Error adding stock");
-    }
-  };
 
   const labels = Array.from({ length: portfolioHistory.length }, (_, i) => {
     const date = new Date();
@@ -151,45 +103,6 @@ export default function Portfolio() {
         <h5 className="text-center">Portfolio Value Over Time</h5>
         <Line data={data} />
       </Card>
-
-      <Card className="m-3 p-3 bg-secondary text-light w-100" style={{ maxWidth: "800px" }}>
-        <h5 className="text-center">Your Purchased Stocks</h5>
-        <Table striped bordered hover variant="dark">
-          <thead>
-            <tr>
-              <th>Stock Name</th>
-              <th>Shares</th>
-              <th>Current Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            {purchasedStocks.map((stock, index) => (
-              <tr key={index}>
-                <td>{stock.stockName}</td>
-                <td>{stock.shares}</td>
-                <td>{stock.currentPrice}</td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </Card>
-
-      <Form onSubmit={handleAddStock} className="bg-dark text-light p-3 rounded w-100" style={{ maxWidth: "600px" }}>
-        <h5 className="text-center">Add a Stock</h5>
-        <Form.Group className="mb-2" controlId="stockName">
-          <Form.Label>Stock Name</Form.Label>
-          <Form.Control type="text" value={stockName} onChange={(e) => setStockName(e.target.value)} />
-        </Form.Group>
-        <Form.Group className="mb-2" controlId="shares">
-          <Form.Label>Shares</Form.Label>
-          <Form.Control type="number" value={shares} onChange={(e) => setShares(e.target.value)} />
-        </Form.Group>
-        <Form.Group className="mb-2" controlId="currentPrice">
-          <Form.Label>Current Price</Form.Label>
-          <Form.Control type="number" value={currentPrice} onChange={(e) => setCurrentPrice(e.target.value)} />
-        </Form.Group>
-        <Button variant="primary" type="submit">Add Stock</Button>
-      </Form>
     </Container>
   );
 }
