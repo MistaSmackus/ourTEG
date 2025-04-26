@@ -2,7 +2,6 @@ import Form from 'react-bootstrap/Form';
 import Container from 'react-bootstrap/Container';
 import Button from 'react-bootstrap/Button';
 import Accordion from 'react-bootstrap/Accordion';
-import Col from 'react-bootstrap/Col';
 import Card from 'react-bootstrap/Card';
 import { useEffect, useState } from 'react';
 import type { Schema } from '../amplify/data/resource';
@@ -156,9 +155,13 @@ export default function UserTransaction() {
           {transaction.map((trans, index) => (
             <Accordion.Item eventKey={String(index)} key={trans.id}>
               <Accordion.Header className="d-flex justify-content-between">
-                <div style={{ flex: 1 }}>{new Date(trans.date).toLocaleDateString()}</div>
+                <div style={{ flex: 1 }}>
+                  {new Date(trans.date || "1970-01-01T00:00:00Z").toLocaleDateString()}
+                </div>
                 <div style={{ flex: 1 }}>{trans.type}</div>
-                <div style={{ flex: 1 }}>{new Date(trans.date).toLocaleTimeString()}</div>
+                <div style={{ flex: 1 }}>
+                  {new Date(trans.date || "1970-01-01T00:00:00Z").toLocaleTimeString()}
+                </div>
               </Accordion.Header>
               <Accordion.Body>
                 <p><strong>Amount:</strong> ${trans.amount}</p>
