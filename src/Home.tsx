@@ -11,7 +11,6 @@ import { generateClient } from "aws-amplify/data";
 
 const client = generateClient<Schema>();
 
-const toFixedNumber = (n: number, digits = 2) => Number(n.toFixed(digits));
 const formatChange = (change: number, isIncrease: boolean) => `${isIncrease ? "+" : "-"}${change.toFixed(2)}`;
 
 const features = [
@@ -60,14 +59,8 @@ export default function Home(): JSX.Element {
 
   function generateRandomNight() {
     if (stock.length === 0) return;
-
-    for (let i = 0; i < 5; i++) {
-      updateStockRandomly(true);
-    }
-
-    for (let i = 0; i < 5; i++) {
-      updateStockRandomly(false);
-    }
+    for (let i = 0; i < 5; i++) updateStockRandomly(true);
+    for (let i = 0; i < 5; i++) updateStockRandomly(false);
   }
 
   function generateRandomDayIncrease() {
@@ -97,10 +90,10 @@ export default function Home(): JSX.Element {
 
     client.models.Stock.update({
       id: selectedStock.id,
-      price: toFixedNumber(newPrice),
+      price: newPrice.toFixed(2),        // Must be string
       change: formatChange(change, isIncrease),
-      last: toFixedNumber(oldPrice),
-      mentions: mentions.toString(),
+      last: oldPrice.toFixed(2),          // Must be string
+      mentions: mentions.toString(),      // Must be string (schema expects integer but DynamoDB likes strings in TS)
     });
   }
 
