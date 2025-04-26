@@ -1,19 +1,15 @@
 import { a, defineData,type ClientSchema } from "@aws-amplify/backend";
 
-
-
-import { a, defineData, type ClientSchema } from "@aws-amplify/backend";
-
 const schema = a.schema({
   Stock: a
     .model({
       name: a.string(),
       symbol: a.string(),
-      price: a.float(),            // was string
-      change: a.float().default(0),// was string
-      volume: a.int().default(0),  // was string
-      last: a.float().default(0),  // was string
-      mentions: a.int().default(0),// was string
+      price: a.float(),           
+      change: a.float().default(0),
+      volume: a.integer().default(0),  
+      last: a.float().default(0),  
+      mentions: a.integer().default(0),
     })
     .authorization((allow) => [
       allow.authenticated().to(['read']),
@@ -49,20 +45,17 @@ const schema = a.schema({
       allow.owner(),
     ]),
 
-  Transaction: a
-    .model({
-      type: a.string(),              
-      amount: a.float(),          
-      date: a.string(),
-      stock: a.string(),            
-      owns: a.boolean().default(false),
-      success: a.boolean().default(false),
-      stockId: a.string(),
-      shares: a.float(),           
-    })
-    .authorization((allow) => [
-      allow.owner(),
+  Transaction: a.model({
+  type: a.string(),
+  amount: a.float(),
+  date: a.string(),
+  stock: a.string(),
+  owns: a.boolean().default(false),
+  success: a.boolean().default(false),
+  stockId: a.string(),
+  shares: a.float(),
     ]),
+
 
   Ownedstock: a
     .model({
@@ -87,19 +80,6 @@ const schema = a.schema({
 });
 
 export type Schema = ClientSchema<typeof schema>;
-
-export const data = defineData({
-  schema,
-  authorizationModes: {
-    defaultAuthorizationMode: "userPool",
-  },
-});
-
-
-
-
-
-
 export const data = defineData({
   schema,
   authorizationModes: {
