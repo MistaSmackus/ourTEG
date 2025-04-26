@@ -113,6 +113,7 @@ export default function BuySell() {
   return (
     <Container className="py-4">
       <h1 className="text-white text-center mb-4">Time to Engage</h1>
+
       <Card className="mb-5">
         <Card.Header><h4>Available Stocks</h4></Card.Header>
         <Card.Body>
@@ -153,4 +154,31 @@ export default function BuySell() {
         <Modal.Body>
           <Form>
             <Form.Group>
-              <Form
+              <Form.Label>Select Stock:</Form.Label>
+              <Form.Select value={stockBuyIndex} onChange={(e) => setStockBuyIndex(Number(e.target.value))}>
+                {stock.map((s, index) => (
+                  <option key={s.id} value={index}>{s.name}</option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+
+            <Form.Group>
+              <Form.Label>Number of Shares:</Form.Label>
+              <Form.Control
+                type="number"
+                placeholder="0"
+                value={stockBuyAmount}
+                onChange={(e) => setStockBuyAmount(Number(e.target.value))}
+              />
+            </Form.Group>
+
+            <div className="d-flex justify-content-end mt-3">
+              <Button variant="secondary" onClick={handleBuyClose} className="me-2">Cancel</Button>
+              <Button variant="primary" onClick={buyStock}>Confirm Purchase</Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
+    </Container>
+  );
+}
