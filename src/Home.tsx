@@ -31,19 +31,19 @@ export default function Home(): JSX.Element {
   }, []);
 
   useEffect(() => {
-    const marketSubscription = client.models.Marketvalue.observeQuery().subscribe({
-      next: (data) => {
-        const transformed = data.items
-          .filter((item) => item.time != null && item.value != null)
-          .map((item) => ({
-            time: item.time!,
-            value: Number(item.value),
-          }));
-        setMarketVal(transformed);
-      },
-    });
-    return () => marketSubscription.unsubscribe();
-  }, []);
+  const marketSubscription = client.models.Marketvalue.observeQuery().subscribe({
+    next: (data) => {
+      const transformed = data.items
+        .filter((item) => item.time != null && item.value != null)
+        .map((item) => ({
+          time: item.time!,
+          value: parseFloat(item.value!), // <- use parseFloat here!
+        }));
+      setMarketVal(transformed);
+    },
+  });
+  return () => marketSubscription.unsubscribe();
+}, []);
 
   useEffect(() => {
     window.onbeforeunload = generateRandomNight;
