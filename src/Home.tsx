@@ -19,6 +19,12 @@ const features = [
   { title: "Market Insights", desc: "AI-driven analytics." },
 ];
 
+const mockStocks = [
+  { name: "Apple Inc.", symbol: "AAPL", price: "150.00", change: "+0.00", last: "150.00", mentions: 0 },
+  { name: "Amazon.com", symbol: "AMZN", price: "135.00", change: "+0.00", last: "135.00", mentions: 0 },
+  { name: "Tesla, Inc.", symbol: "TSLA", price: "200.00", change: "+0.00", last: "200.00", mentions: 0 },
+];
+
 export default function Home(): JSX.Element {
   const [stock, setStock] = useState<Array<Schema["Stock"]["type"]>>([]);
   const [marketval, setMarketVal] = useState<Array<{ time: string; value: number }>>([]);
@@ -46,11 +52,28 @@ export default function Home(): JSX.Element {
   }, []);
 
   useEffect(() => {
-    window.onbeforeunload = generateRandomNight;
+    const seedInitialStocks = async () => {
+      const response = await client.models.Stock.list();
+      if (response.data.length === 0) {
+        for (const s of mockStocks) {
+          await client.models.Stock.create({
+            name: s.name,
+            symbol: s.symbol,
+            price: s.price,
+            change: s.change,
+            last: s.last,
+            mentions: s.mentions,
+          });
+        }
+      }
+    };
+    seedInitialStocks();
+  }, []);
 
+  useEffect(() => {
+    window.onbeforeunload = generateRandomNight;
     const intervalInc = setInterval(generateRandomDayIncrease, 90000);
     const intervalDec = setInterval(generateRandomDayDecrease, 1000000);
-
     return () => {
       clearInterval(intervalInc);
       clearInterval(intervalDec);
@@ -80,7 +103,6 @@ export default function Home(): JSX.Element {
 
     const oldPrice = Number(selectedStock.price);
     let change = Math.floor(Math.random() * 10);
-
     if (!isIncrease && change > oldPrice) {
       change = Math.floor(Math.random() * 5);
     }
